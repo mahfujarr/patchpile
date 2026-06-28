@@ -38,9 +38,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           if [ "${{ inputs.force_build }}" = "true" ]; then
-            echo "build_matrix=$(uv run python -m src.scripts.matrix get-matrix-force)" >> "$GITHUB_OUTPUT"
+            echo "build_matrix=$(uv run python -m src.scripts.matrix check-builds-force)" >> "$GITHUB_OUTPUT"
           else
-            echo "build_matrix=$(uv run python -m src.scripts.matrix get-matrix)" >> "$GITHUB_OUTPUT"
+            echo "build_matrix=$(uv run python -m src.scripts.matrix check-builds)" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Notify skipped build
@@ -63,5 +63,5 @@ jobs:
     uses: ./.github/workflows/build.yml
     with:
       patch_source: ${{ matrix.patch_source }}
-      filter_changelog: ${{ inputs.force_build != true }}
+      filter_changelog: ${{ inputs.force_build != 'true' }}
     secrets: inherit
