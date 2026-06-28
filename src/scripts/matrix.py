@@ -1,9 +1,11 @@
 import json
 import os
+import re
 import sys
-from datetime import datetime
+from datetime import datetime, timezone
+from pathlib import Path
 
-from src.core.config import CONFIG_PATH, load_toml, parse_app_entries, parse_config
+from src.core.config import CONFIG_PATH, AppEntry, load_toml, parse_app_entries, parse_config
 from src.core.logger import IS_GITHUB, abort, epr
 from src.core.network import NetworkManager, ResourceNotFoundError
 
@@ -12,39 +14,73 @@ def _require_ci(script: str) -> None:
     if not IS_GITHUB:
         abort(f"'{script}' is only available in GitHub Actions")
 
+
+def _parse_dt(raw: str) -> datetime:
+    return datetime.fromisoformat(raw.replace("Z", "+00:00")).astimezone(timezone.utc)
+
+
 def _fetch_latest_release(source: str, net: NetworkManager) -> tuple[str, str]:
     scheme, clean_src = source.split(":", 1)
     if scheme == "gitlab":
         project = clean_src.replace("/", "%2F")
-        upstream_rel = json.loads(net.get(f"https://gitlab.com/api/v4/projects/{project}/releases/permalink/latest"))
-        changelog_text = upstream_rel.get("description", "") or ""
-        upstream_date = upstream_rel.get("released_at", "") or ""
-    else:
-        upstream_rel = json.loads(net.get(f"https://api.github.com/repos/{clean_src}/releases/latest", headers=net._gh_headers))
-        changelog_text = upstream_rel.get("body", "") or ""
-        upstream_date = upstream_rel.get("published_at", "") or ""
+        rel = json.loads(net.get(f"https://gitlab.com/api/v4/projects/{project}/releases/permalink/latest"))
+        return rel.get("description", "") or "", rel.get("released_at", "") or ""
 
-    return changelog_text, upstream_date
+    rel = json.loads(net.get(f"https://api.github.com/repos/{clean_src}/releases/latest", headers=net._gh_headers))
+    return rel.get("body", "") or "", rel.get("published_at", "") or ""
 
-def _fetch_our_releases(repo: str, net: NetworkManager) -> dict[str, str]:
-    our_releases_by_brand: dict[str, str] = {}
+
+def _fetch_our_releases(repo: str, net: NetworkManager) -> tuple[dict[str, str], set[str]]:
+    our_dates: dict[str, str] = {}
+    compiled_versions: set[str] = set()
     try:
-        our_releases_raw = net.get(f"https://api.github.com/repos/{repo}/releases?per_page=100", headers=net._gh_headers)
-        for rel in json.loads(our_releases_raw):
+        raw = net.get(f"https://api.github.com/repos/{repo}/releases?per_page=100", headers=net._gh_headers)
+        for rel in json.loads(raw):
             tag = rel.get("tag_name", "")
-            brand = tag.split("-", 1)[1] if "-" in tag else ""
-            if brand and brand not in our_releases_by_brand:
-                our_releases_by_brand[brand] = rel.get("published_at", "") or ""
+            brand = tag.rsplit("-", 1)[1] if "-" in tag else ""
+            if brand and brand not in our_dates:
+                our_dates[brand] = rel.get("published_at", "") or ""
+
+            body = rel.get("body", "") or ""
+            for ver in re.findall(r"🟢\s+[\w\-]+\s+\([^)]+\):\s*([^\s\n\r\[]+)", body):
+                compiled_versions.add(ver.strip().lower())
     except Exception as exc:
         epr(f"Failed to fetch our releases: {exc}")
-        our_releases_by_brand = {}
-    return our_releases_by_brand
+    return our_dates, compiled_versions
+
+
+def _fetch_latest_app_version(entry: AppEntry, net: NetworkManager) -> str | None:
+    from src.scrapers.apkmirror import APKMirrorScraper
+    from src.scrapers.github import GitHubScraper
+    from src.scrapers.uptodown import UptodownScraper
+    from src.core.prebuilts import get_highest_ver
+
+    scraper_map = {
+        "apkmirror": APKMirrorScraper,
+        "github": GitHubScraper,
+        "uptodown": UptodownScraper,
+    }
+
+    for src, url in entry.dl_urls.items():
+        cls = scraper_map.get(src)
+        if not cls:
+            continue
+        try:
+            metadata = cls(net).cached_metadata(url)
+            if metadata.versions:
+                return get_highest_ver(metadata.versions)
+        except Exception as exc:
+            epr(f"Could not fetch app version for '{entry.table}' from '{src}': {exc}")
+
+    return None
+
 
 def get_matrix(source: str) -> None:
     data = load_toml(CONFIG_PATH)
     main_cfg = parse_config(data)
     source_lower = source.lower()
     filter_changelog = os.getenv("FILTER_CHANGELOG", "false").lower() == "true"
+
     patches_source = ""
     has_changelog_keywords = False
     for entry in parse_app_entries(data, main_cfg):
@@ -59,9 +95,8 @@ def get_matrix(source: str) -> None:
         with NetworkManager() as net:
             repo = os.getenv("GITHUB_REPOSITORY")
             if repo:
-                our_releases_by_brand = _fetch_our_releases(repo, net)
-                our_date = our_releases_by_brand.get(source_lower, "")
-                if our_date:
+                our_dates, _ = _fetch_our_releases(repo, net)
+                if our_dates.get(source_lower):
                     try:
                         changelog_text, _ = _fetch_latest_release(patches_source, net)
                     except Exception as exc:
@@ -76,25 +111,27 @@ def get_matrix(source: str) -> None:
             continue
 
         if entry.arch == "both":
-            include.extend([{"id": entry.table, "arch": "arm64-v8a"}, {"id": entry.table, "arch": "armeabi-v7a"}])
+            include.extend([
+                {"id": entry.table, "arch": "arm64-v8a"},
+                {"id": entry.table, "arch": "armeabi-v7a"},
+            ])
         else:
-            include.append({"id": entry.table})
+            include.append({"id": entry.table, "arch": entry.arch or "arm64-v8a"})
 
     if not include:
         abort(f"No apps found for patch source '{source}'")
 
     print(json.dumps({"include": include}, ensure_ascii=False))
 
+
 def check_builds_needed(force_all: bool = False) -> None:
     data = load_toml(CONFIG_PATH)
     main_cfg = parse_config(data)
+
     seen: dict[str, str] = {}
     for entry in parse_app_entries(data, main_cfg):
-        if not entry.enabled:
-            continue
-        brand = entry.brand.lower()
-        if brand not in seen:
-            seen[brand] = next(iter(entry.patches), "")
+        if entry.enabled and entry.brand.lower() not in seen:
+            seen[entry.brand.lower()] = next(iter(entry.patches), "")
 
     if not seen:
         print(json.dumps([]))
@@ -109,13 +146,18 @@ def check_builds_needed(force_all: bool = False) -> None:
         abort("GITHUB_REPOSITORY environment variable is not set")
 
     with NetworkManager() as net:
-        our_releases_by_brand = _fetch_our_releases(repo, net)
+        our_dates, compiled_versions = _fetch_our_releases(repo, net)
+        brands_to_build: set[str] = set()
 
-        brands_to_build: list[str] = []
         for brand, patches_source in seen.items():
-            our_date = our_releases_by_brand.get(brand, "")
-            upstream_date = ""
+            our_date = our_dates.get(brand, "")
+
+            if not our_date:
+                brands_to_build.add(brand)
+                continue
+
             changelog_text = ""
+            upstream_date = ""
             try:
                 changelog_text, upstream_date = _fetch_latest_release(patches_source, net)
             except ResourceNotFoundError:
@@ -123,34 +165,47 @@ def check_builds_needed(force_all: bool = False) -> None:
                 continue
             except Exception as exc:
                 epr(f"Failed to fetch upstream release for '{patches_source}': {exc}")
-                brands_to_build.append(brand)
+                brands_to_build.add(brand)
                 continue
 
-            if not our_date:
-                brands_to_build.append(brand)
-            elif upstream_date and datetime.fromisoformat(upstream_date) > datetime.fromisoformat(our_date):
-                has_apps = False
-                for app in parse_app_entries(data, main_cfg):
-                    if app.enabled and app.brand.lower() == brand and (not app.changelog_keywords or any(kw in changelog_text.lower() for kw in app.changelog_keywords)):
-                        has_apps = True
-                        break
-                if not has_apps:
-                    continue
-                brands_to_build.append(brand)
+            if upstream_date and _parse_dt(upstream_date) > _parse_dt(our_date):
+                has_apps = any(
+                    app.enabled and app.brand.lower() == brand
+                    and (not app.changelog_keywords or any(kw in changelog_text.lower() for kw in app.changelog_keywords))
+                    for app in parse_app_entries(data, main_cfg)
+                )
+                if has_apps:
+                    print(f"::notice::🔄 Patch update detected for brand '{brand}'.", file=sys.stderr)
+                    brands_to_build.add(brand)
+                continue
 
-    print(json.dumps(brands_to_build))
+            for app in parse_app_entries(data, main_cfg):
+                if not app.enabled or app.brand.lower() != brand:
+                    continue
+                latest_ver = _fetch_latest_app_version(app, net)
+                if not latest_ver:
+                    continue
+                if latest_ver.lower() not in compiled_versions:
+                    print(f"::notice::🔄 New app version '{latest_ver}' detected for '{app.table}'.", file=sys.stderr)
+                    brands_to_build.add(brand)
+                    break
+                print(f"::notice::✅ '{app.table}' version '{latest_ver}' already compiled. Skipping.", file=sys.stderr)
+
+    print(json.dumps(list(brands_to_build)))
+
 
 def main() -> None:
     _require_ci("matrix.py")
     match sys.argv[1:]:
-        case ["get-matrix"]:
+        case ["check-builds"]:
             check_builds_needed()
-        case ["get-matrix-force"]:
+        case ["check-builds-force"]:
             check_builds_needed(force_all=True)
         case ["get-matrix", source]:
             get_matrix(source)
         case _:
-            abort("Usage: matrix.py get-matrix [source] | get-matrix-force")
+            abort("Usage: matrix.py get-matrix <source> | check-builds | check-builds-force")
+
 
 if __name__ == "__main__":
     main()

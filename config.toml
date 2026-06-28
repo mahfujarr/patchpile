@@ -23,6 +23,7 @@ brand = "piko"
 github-dlurl = "https://github.com/krvstek/uni-storage/releases/tag/instagram"
 # apkmirror-dlurl = "https://www.apkmirror.com/apk/instagram/instagram-instagram"
 # uptodown-dlurl = "https://instagram.en.uptodown.com/android"
+version = "latest"
 arch = "arm64-v8a"
 
 [Instagram.patches]
