@@ -124,7 +124,7 @@ class PatcherCLI:
 
     def patch(self, stock_apk: Path, output_apk: Path, patch_args: list[str]) -> None:
         tmp_files_dir = output_apk.parent / f"tmp-{output_apk.stem}"
-        base_cmd = ["-jar", self.cli_jar, "patch", stock_apk, "--purge", "-o", output_apk, "-t", tmp_files_dir]
+        base_cmd = ["-jar", self.cli_jar, "patch", stock_apk, "-o", output_apk, "-t", tmp_files_dir]
         ks_args: list[str] = []
         if self.ks_path and (ks_pass := os.getenv("KEYSTORE_PASS")) and (ks_alias := os.getenv("KEYSTORE_ALIAS")):
             ks_args = [f"--keystore={self.ks_path}", f"--keystore-entry-password={ks_pass}", f"--keystore-password={ks_pass}", f"--signer={ks_alias}", f"--keystore-entry-alias={ks_alias}"]
