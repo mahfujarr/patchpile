@@ -1208,9 +1208,9 @@
       function formatBuiltAt(iso) {
         const d = new Date(iso);
         if (isNaN(d.getTime())) return 'recent';
-        const datePart = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).replace(',', '');
-        const timePart = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-        return `${datePart}, ${timePart}`;
+        const datePart = d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace(',', '');
+        const timePart = d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+        return ` ${timePart}, ${datePart}`;
       }
 
       async function getReleasesList(repo) {
