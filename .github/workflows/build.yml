@@ -9,12 +9,13 @@ on:
         type: choice
         options:
           - morphe
+          - morphe-dev
           - piko
           - hoo-dles
-          - de-vanced
           - paresh
+          - rushi
+          - de-vanced
           - anddea
-          - ample
   workflow_call:
     inputs:
       patch_source:
@@ -35,6 +36,7 @@ jobs:
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
       version: ${{ steps.version.outputs.version }}
+      prerelease: ${{ steps.set-matrix.outputs.prerelease }}
     steps:
       - name: Checkout
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0
@@ -43,10 +45,11 @@ jobs:
           submodules: true
 
       - name: Install uv
-        uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990  # v8.3.2
+        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39  # v8.2.0
         with:
           python-version: "3.13"
           enable-cache: true
+          quiet: true
 
       - name: Install dependencies
         run: uv sync --frozen
@@ -69,7 +72,10 @@ jobs:
         env:
           FILTER_CHANGELOG: ${{ inputs.filter_changelog }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: echo "matrix=$(uv run python -m src.scripts.matrix get-matrix '${{ inputs.patch_source }}')" >> "$GITHUB_OUTPUT"
+        run: |
+          RESULT="$(uv run python -m src.scripts.matrix get-matrix '${{ inputs.patch_source }}')"
+          echo "matrix=$(echo "$RESULT" | jq -c '{include}')" >> "$GITHUB_OUTPUT"
+          echo "prerelease=$(echo "$RESULT" | jq -r '.prerelease')" >> "$GITHUB_OUTPUT"
 
   run:
     needs: prepare
@@ -88,16 +94,17 @@ jobs:
           submodules: true
 
       - name: Install java
-        uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95  # v5.6.0
+        uses: actions/setup-java@1bcf9fb12cf4aa7d266a90ae39939e61372fe520  # v5.4.0
         with:
           distribution: "temurin"
           java-version: "21"
 
       - name: Install uv
-        uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990  # v8.3.2
+        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39  # v8.2.0
         with:
           python-version: "3.13"
           enable-cache: true
+          quiet: true
 
       - name: Install dependencies
         run: uv sync --frozen
@@ -150,10 +157,11 @@ jobs:
           submodules: true
 
       - name: Install uv
-        uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990  # v8.3.2
+        uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39  # v8.2.0
         with:
           python-version: "3.13"
           enable-cache: true
+          quiet: true
 
       - name: Install dependencies
         run: uv sync --frozen
@@ -182,9 +190,14 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ needs.prepare.outputs.version }}
+          PRERELEASE: ${{ needs.prepare.outputs.prerelease }}
         run: |
           uv run python -m src.scripts.logs combine-logs logs | sed "s/{TAG}/$TAG/g" > final.md
-          gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --draft=false --title "$TAG" --notes-file final.md
+          if [ "$PRERELEASE" = "true" ]; then
+            gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --draft=false --prerelease --title "$TAG" --notes-file final.md
+          else
+            gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --draft=false --title "$TAG" --notes-file final.md
+          fi
 
       - name: Send Telegram notification
         if: steps.check.outputs.has_apks == 'true' && env.TG_TOKEN != '' && env.TG_CHAT != ''

@@ -1,7 +1,6 @@
 import contextlib
 import os
 import re
-import shutil
 import subprocess
 from pathlib import Path
 
@@ -41,7 +40,6 @@ def _parse_versions_output(output: str) -> list[str]:
         clean_ver = line.split("(")[0].strip()
         if clean_ver:
             versions.append(clean_ver)
-
     return versions
 
 def _redact_args(args: list[str | Path]) -> list[str]:
@@ -61,24 +59,29 @@ class PatcherCLI:
 
     def has_signature(self, pkg_name: str) -> bool:
         expected = self._signatures.get(pkg_name)
-        return bool(expected and expected.strip())
+        return bool(expected)
 
-    def list_patches(self, pkg_name: str) -> str:
-        return "".join(_run_java("-jar", self.cli_jar, "list-patches", "--patches", mpp, "-f", pkg_name, "-v", "-p", timeout=60) for mpp in self.mpp_map.values())
+    def list_patches(self, pkg_name: str, experimental: bool = False) -> str:
+        extra = ["-x"] if experimental else []
+        return "".join(_run_java("-jar", self.cli_jar, "list-patches", "--patches", mpp, "-f", pkg_name, "-v", "-p", *extra, timeout=60) for mpp in self.mpp_map.values())
 
-    def list_versions(self, pkg_name: str) -> str:
+    def list_versions(self, pkg_name: str, experimental: bool = False) -> str:
+        extra = ["-x"] if experimental else []
         parts = []
         for mpp in self.mpp_map.values():
             with contextlib.suppress(PatcherError):
-                parts.append(_run_java("-jar", self.cli_jar, "list-versions", "--patches", mpp, "-f", pkg_name, timeout=60))
+                parts.append(_run_java("-jar", self.cli_jar, "list-versions", "--patches", mpp, "-f", pkg_name, *extra, timeout=60))
         return "\n".join(parts)
 
-    def get_last_supported_version(self, list_patches_output: str, pkg_name: str, patches: dict[str, dict]) -> str | None:
+    def get_last_supported_version(self, list_patches_output: str, pkg_name: str, patches: dict[str, dict], experimental: bool = False) -> str | None:
         all_included = [p for spec in patches.values() for p in spec["include"]]
-        if all_included and (all_vers := [v for p in all_included for v in _parse_patch_block(list_patches_output, p)]):
+        all_vers: list[str] = []
+        for p in all_included:
+            all_vers.extend(_parse_patch_block(list_patches_output, p))
+        if all_vers:
             return get_highest_ver(all_vers)
 
-        versions_output = self.list_versions(pkg_name)
+        versions_output = self.list_versions(pkg_name, experimental)
         if "Any" in versions_output:
             return None
 
@@ -89,7 +92,8 @@ class PatcherCLI:
     def resolve_auto_patches(self, list_patches_output: str) -> tuple[str, str]:
         microg_patch = psu_patch = ""
         for line in list_patches_output.splitlines():
-            if not line.lower().startswith("name:"):
+            line_lower = line.lower()
+            if not line_lower.startswith("name:"):
                 continue
 
             patch_name = line[5:].strip()
@@ -98,7 +102,6 @@ class PatcherCLI:
                 microg_patch = patch_name
             elif "disable play store updates" in name_lower:
                 psu_patch = patch_name
-
         return microg_patch, psu_patch
 
     def build_patch_args(self, patches: dict[str, dict], extra_args: list[str], arch: str, auto_patches: tuple[str, str], exclusive: bool = False, force: bool = False) -> list[str]:
@@ -123,8 +126,7 @@ class PatcherCLI:
         return p_args
 
     def patch(self, stock_apk: Path, output_apk: Path, patch_args: list[str]) -> None:
-        tmp_files_dir = output_apk.parent / f"tmp-{output_apk.stem}"
-        base_cmd = ["-jar", self.cli_jar, "patch", stock_apk, "-o", output_apk, "-t", tmp_files_dir]
+        base_cmd = ["-jar", self.cli_jar, "patch", stock_apk, "-o", output_apk]
         ks_args: list[str] = []
         if self.ks_path and (ks_pass := os.getenv("KEYSTORE_PASS")) and (ks_alias := os.getenv("KEYSTORE_ALIAS")):
             ks_args = [f"--keystore={self.ks_path}", f"--keystore-entry-password={ks_pass}", f"--keystore-password={ks_pass}", f"--signer={ks_alias}", f"--keystore-entry-alias={ks_alias}"]
@@ -140,8 +142,6 @@ class PatcherCLI:
         except PatcherError as exc:
             output_apk.unlink(missing_ok=True)
             raise PatcherError(f"Patching '{stock_apk.name}' failed:\n{exc}") from exc
-        finally:
-            shutil.rmtree(tmp_files_dir, ignore_errors=True)
 
     def check_signature(self, apk: Path, pkg_name: str) -> bool:
         expected = self._signatures.get(pkg_name)

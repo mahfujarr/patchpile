@@ -45,6 +45,7 @@ def _parse_bool(d: dict[str, object], key: str, default: bool) -> bool:
     value = d.get(key, default)
     if isinstance(value, bool):
         return value
+
     raise ValueError(f"'{key}' must be a boolean (true/false without quotes), got {type(value).__name__}")
 
 def parse_config(data: dict[str, object]) -> Config:
@@ -52,7 +53,7 @@ def parse_config(data: dict[str, object]) -> Config:
         parallel_jobs=int(data.get("parallel-jobs", os.process_cpu_count() or 1)),
         brand=str(data.get("brand", "Morphe")),
         cli_version=str(data.get("cli-version", "latest")),
-        cli_source=str(data.get("cli-source", "github:MorpheApp/morphe-cli")),
+        cli_source=str(data.get("cli-source", "github:MorpheApp/morphe-desktop")),
         strict_sigcheck=_parse_bool(data, "strict-sigcheck", True),
     )
 
@@ -74,6 +75,7 @@ def parse_app_entries(data: dict[str, object], main: Config) -> list[AppEntry]:
         raw_patches = t.get("patches", {})
         if not isinstance(raw_patches, dict):
             raise ValueError(f"'patches' for '{table_name}' must be a TOML table")
+
         patches: dict[str, dict] = {}
         for k, v in raw_patches.items():
             if isinstance(v, list):
@@ -84,11 +86,16 @@ def parse_app_entries(data: dict[str, object], main: Config) -> list[AppEntry]:
         raw_keywords = t.get("changelog-keywords")
         if raw_keywords is not None and not isinstance(raw_keywords, list):
             raise ValueError(f"'changelog-keywords' must be a list for '{table_name}'")
-        keywords = [s.lower() for k in raw_keywords if (s := str(k)).strip()] if raw_keywords else []
+
+        keywords: list[str] = []
+        for k in (raw_keywords or []):
+            s = str(k).strip()
+            if s:
+                keywords.append(s.lower())
 
         entries.append(AppEntry(
             table=table_name,
-            app_name=str(t.get("app-name", table_name)),
+            app_name=str(t.get("app-name", table_name.replace("-", " "))),
             brand=str(t.get("brand", main.brand)),
             arch=arch,
             dpi=str(t.get("dpi", "")),

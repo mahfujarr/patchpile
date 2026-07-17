@@ -8,7 +8,7 @@ from concurrent.futures import Future, ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 from src.core.config import BUILD_DIR, TEMP_DIR, AppEntry, Config
-from src.core.logger import IS_GITHUB, epr, pr, wpr
+from src.core.logger import IS_GITHUB, epr, is_interrupted, pr, wpr
 from src.core.network import NetworkError, NetworkManager
 from src.core.patcher import PatcherCLI, PatcherError, SignatureError
 from src.core.prebuilts import APKSIGNER, fetch_cli, fetch_mpp, get_highest_ver
@@ -44,13 +44,12 @@ def _find_pkg_name(entry: AppEntry, scrapers: dict[str, BaseScraper]) -> tuple[s
         except (NetworkError, ScraperError) as exc:
             epr(f"Could not find '{entry.table}' in '{src}': {exc}")
             failed.add(src)
-
     raise BuilderError("Package name not found")
 
 def _resolve_version(entry: AppEntry, patcher: PatcherCLI, list_patches: str, pkg_name: str, dl_from: str, scrapers: dict[str, BaseScraper]) -> tuple[str, bool]:
     if entry.version not in ("auto", "latest"):
         version, is_custom = entry.version, True
-    elif entry.version == "auto" and (v := patcher.get_last_supported_version(list_patches, pkg_name, entry.patches)):
+    elif entry.version in ("auto", "latest") and (v := patcher.get_last_supported_version(list_patches, pkg_name, entry.patches, experimental=entry.version == "latest")):
         version, is_custom = v, False
     else:
         versions = scrapers[dl_from].cached_metadata(entry.dl_urls[dl_from]).versions
@@ -78,22 +77,22 @@ def _download_apk(entry: AppEntry, version: str, arch: str, pkg_name: str, scrap
     for src in ordered_sources:
         if src in failed_sources:
             continue
+
         url = entry.dl_urls[src]
         pr(f"Downloading '{entry.table}' from '{src}'")
         try:
             return scrapers[src].download(url, version, stock_apk, arch, entry.dpi)
         except (NetworkError, ScraperError) as exc:
             epr(f"Failed to fetch '{entry.table}' from '{src}' (version='{version}', arch='{arch}'): {exc}")
-
     raise BuilderError("Stock APK not found")
 
 def _extract_base_apk(apkm: Path, pkg_name: str, dest_dir: Path) -> Path:
     with zipfile.ZipFile(apkm, "r") as zf:
+        names = zf.NameToInfo
         for name in ("base.apk", f"{pkg_name}.apk"):
-            if name in zf.namelist():
+            if name in names:
                 zf.extract(name, dest_dir)
                 return dest_dir / name
-
     raise BuilderError(f"Neither 'base.apk' nor '{pkg_name}.apk' found inside {apkm.name}")
 
 def _verify_sig(dl_result: DownloadResult, pkg_name: str, patcher: PatcherCLI, table: str, skip_sigcheck: bool, strict_sigcheck: bool) -> None:
@@ -105,6 +104,7 @@ def _verify_sig(dl_result: DownloadResult, pkg_name: str, patcher: PatcherCLI, t
         msg = f"No signature entry found in sig.txt for '{pkg_name}'"
         if strict_sigcheck:
             raise SignatureError(msg)
+
         wpr(f"{msg}, skipping it")
         return
 
@@ -141,7 +141,7 @@ def _build_single(entry: AppEntry, arch: str, label: str, net: NetworkManager, p
     try:
         scrapers = {src: _make_scraper(src, net) for src in entry.dl_urls}
         pkg_name, dl_from, failed_sources = _find_pkg_name(entry, scrapers)
-        list_patches = patcher.list_patches(pkg_name)
+        list_patches = patcher.list_patches(pkg_name, experimental=entry.version == "latest")
         version, force = _resolve_version(entry, patcher, list_patches, pkg_name, dl_from, scrapers)
         dl_result = _download_apk(entry, version, arch, pkg_name, scrapers, dl_from, failed_sources)
         _verify_sig(dl_result, pkg_name, patcher, label, entry.skip_sigcheck, strict_sigcheck)
@@ -154,7 +154,8 @@ def _build_single(entry: AppEntry, arch: str, label: str, net: NetworkManager, p
         if isinstance(exc, SignatureError):
             _failed_signatures.add(entry.table)
 
-        epr(f"Building '{label}' failed! {exc}")
+        if not is_interrupted():
+            epr(f"Building '{label}' failed! {exc}")
         return None
 
 def _submit_entries(entries: list[AppEntry], pool: ThreadPoolExecutor, net: NetworkManager, ks_path: Path | None, strict_sigcheck: bool) -> list[Future[str | None]]:
@@ -163,6 +164,7 @@ def _submit_entries(entries: list[AppEntry], pool: ThreadPoolExecutor, net: Netw
     for e in entries:
         if not e.dl_urls:
             continue
+
         key = (e.cli_source, e.cli_version)
         if key not in cli_cache:
             try:
@@ -198,9 +200,8 @@ def _submit_entries(entries: list[AppEntry], pool: ThreadPoolExecutor, net: Netw
         patcher = PatcherCLI(cli_cache[cli_key], app_mpp_map, APKSIGNER, ks_path=ks_path)
         arches = ("arm64-v8a", "armeabi-v7a") if entry.arch == "both" else (entry.arch,)
         for arch in arches:
-            label = entry.table if entry.arch == "all" else f"{entry.table} ({arch})"
+            label = entry.app_name if entry.arch == "all" else f"{entry.app_name} ({arch})"
             futures.append(pool.submit(_build_single, entry, arch, label, net, patcher, strict_sigcheck))
-
     return futures
 
 def run_build(entries: list[AppEntry], config: Config, net: NetworkManager) -> bool:
@@ -235,9 +236,11 @@ def run_build(entries: list[AppEntry], config: Config, net: NetworkManager) -> b
 
     raw = "".join(cl.read_text(encoding="utf-8") for cl in sorted(TEMP_DIR.glob("*/changelog.md")))
     block_re = re.compile(r"^> ⚙️ » (CLI|Patches):.*?(?=^> ⚙️ »|\Z)", re.MULTILINE | re.DOTALL)
-    cli_blocks = "".join(m.group() for m in block_re.finditer(raw) if m.group(1) == "CLI")
-    patch_blocks = "".join(m.group() for m in block_re.finditer(raw) if m.group(1) == "Patches")
-    changelogs = cli_blocks + patch_blocks
+    cli_blocks: list[str] = []
+    patch_blocks: list[str] = []
+    for m in block_re.finditer(raw):
+        (cli_blocks if m.group(1) == "CLI" else patch_blocks).append(m.group())
+    changelogs = "".join(cli_blocks) + "".join(patch_blocks)
     microg_line = "▶️ » Install [MicroG-RE](https://github.com/MorpheApp/MicroG-RE/releases) to enable Google account sign-in for supported apps\n"
     Path("build.md").write_text("\n".join([*log_lines, "", microg_line, changelogs]), encoding="utf-8")
     pr("Done")

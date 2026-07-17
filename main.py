@@ -9,7 +9,7 @@ from pathlib import Path
 
 from src.core.builder import run_build
 from src.core.config import BUILD_DIR, CONFIG_PATH, TEMP_DIR, VALID_ARCHES, AppEntry, load_toml, parse_app_entries, parse_config
-from src.core.logger import abort, epr, pr
+from src.core.logger import abort, epr, mark_interrupted, pr
 from src.core.network import NetworkManager
 
 _shutting_down = False
@@ -25,6 +25,7 @@ def _load_dotenv(path: Path = Path(".env")) -> None:
             continue
 
         key, _, value = line.partition("=")
+        key = key.strip()
         if key and key not in os.environ:
             os.environ[key] = value.strip().strip('"\'')
 
@@ -36,6 +37,7 @@ def _require_java(min_version: int = 21) -> None:
     match = re.search(r'version "(\d+)', result.stderr)
     if not match:
         abort("Could not determine Java version")
+    assert match
 
     version = int(match.group(1))
     if version < min_version:
@@ -46,7 +48,7 @@ def _build(target_app: str | None = None, arch_override: str | None = None) -> i
     data = load_toml(CONFIG_PATH)
     main_cfg = parse_config(data)
     pr(f"Loaded config '{CONFIG_PATH}'")
-    entries: list[AppEntry] = [e for e in parse_app_entries(data, main_cfg) if e.enabled and (not target_app or e.table == target_app)]
+    entries: list[AppEntry] = [e for e in parse_app_entries(data, main_cfg) if (not target_app and e.enabled) or (target_app and e.table == target_app)]
     if target_app and not entries:
         abort(f"App '{target_app}' not found in config")
 
@@ -61,21 +63,20 @@ def _build(target_app: str | None = None, arch_override: str | None = None) -> i
     Path("build.md").write_text("", encoding="utf-8")
     with NetworkManager() as net:
         success = run_build(entries, main_cfg, net)
-
     return 0 if success else 1
 
 def _clear() -> int:
+    cleaned = False
     for directory in (TEMP_DIR, BUILD_DIR):
         if directory.exists():
             shutil.rmtree(directory)
-            pr(f"Removed '{directory}'")
-        else:
-            pr(f"'{directory}' already clean")
+            cleaned = True
 
     if (build_md := Path("build.md")).exists():
         build_md.unlink()
-        pr("Removed 'build.md'")
+        cleaned = True
 
+    pr("Cleaned successfully" if cleaned else "Already clean")
     return 0
 
 def _sigint_handler(sig: int, frame: object) -> None:
@@ -84,6 +85,7 @@ def _sigint_handler(sig: int, frame: object) -> None:
         return
 
     _shutting_down = True
+    mark_interrupted()
     epr("Interrupted by user")
     for tmp in TEMP_DIR.rglob("tmp*"):
         shutil.rmtree(tmp, ignore_errors=True)
