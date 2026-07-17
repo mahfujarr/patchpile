@@ -488,6 +488,102 @@
       color: var(--text-faint);
     }
 
+    .app-version .f-date {
+      color: var(--text-faint);
+    }
+
+    .app-exp {
+      margin-top: 12px;
+    }
+
+    .exp-menu {
+      border: 1px solid var(--line-soft);
+      border-radius: 10px;
+      background: var(--bg-raised);
+      overflow: hidden;
+    }
+
+    .exp-menu summary {
+      list-style: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 9px 12px;
+      font-family: var(--mono);
+      font-size: 11.5px;
+      color: var(--text-faint);
+      user-select: none;
+    }
+
+    .exp-menu summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .exp-menu summary::after {
+      content: '▾';
+      font-size: 11px;
+      color: var(--text-faint);
+      transition: transform .15s ease;
+    }
+
+    .exp-menu[open] summary::after {
+      transform: rotate(180deg);
+    }
+
+    .exp-list {
+      padding: 0 10px 10px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .exp-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      border: 1px solid var(--line-soft);
+      border-radius: 8px;
+      padding: 8px 10px;
+      background: var(--bg);
+    }
+
+    .exp-main {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .exp-title {
+      font-size: 12.5px;
+      color: var(--text-dim);
+      font-weight: 600;
+    }
+
+    .exp-version {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--text-faint);
+      display: flex;
+      gap: 6px 12px;
+      flex-wrap: wrap;
+    }
+
+    .exp-item .dl-btn {
+      padding: 7px 10px;
+      font-size: 12px;
+      border-radius: 7px;
+      gap: 6px;
+      box-shadow: none;
+    }
+
+    .exp-item .dl-btn svg {
+      width: 13px;
+      height: 13px;
+    }
+
     .app-version .skel {
       display: inline-block;
       width: 70px;
@@ -571,6 +667,15 @@
       .app:hover {
         margin: 0 -16px;
         padding: 24px 16px;
+      }
+
+      .exp-item {
+        flex-wrap: wrap;
+      }
+
+      .exp-item .dl-btn {
+        width: 100%;
+        justify-content: center;
       }
     }
 
@@ -826,6 +931,33 @@
             <span class="f-size skel"></span>
             <span class="f-built skel"></span>
           </div>
+          <div class="app-exp">
+            <details class="exp-menu">
+              <summary>Experimental app build</summary>
+              <div class="exp-list">
+                <div class="exp-item" data-repo="mahfujarr/patchpile" data-patch-source="morphe-dev"
+                  data-asset-match="youtube-experimental">
+                  <div class="exp-main">
+                    <span class="exp-title">YouTube Experimental</span>
+                    <div class="exp-version">
+                      <span class="v-num"></span>
+                      <span class="f-size skel"></span>
+                      <span class="f-date skel"></span>
+                      <span class="f-built skel"></span>
+                    </div>
+                  </div>
+                  <a class="dl-btn" href="https://github.com/mahfujarr/patchpile/releases" target="_blank"
+                    rel="noopener">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"
+                      stroke-linejoin="round">
+                      <path d="M12 3v12m0 0 4-4m-4 4-4-4M5 21h14" />
+                    </svg>
+                    <span>Try build</span>
+                  </a>
+                </div>
+              </div>
+            </details>
+          </div>
         </div>
         <a class="dl-btn" href="https://github.com/mahfujarr/patchpile/releases" target="_blank">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"
@@ -850,6 +982,33 @@
             <span class="v-num"></span>
             <span class="f-size skel"></span>
             <span class="f-built skel"></span>
+          </div>
+          <div class="app-exp">
+            <details class="exp-menu">
+              <summary>Experimental app build</summary>
+              <div class="exp-list">
+                <div class="exp-item" data-repo="mahfujarr/patchpile" data-patch-source="morphe-dev"
+                  data-asset-match="yt-music-experimental">
+                  <div class="exp-main">
+                    <span class="exp-title">YT Music Experimental</span>
+                    <div class="exp-version">
+                      <span class="v-num"></span>
+                      <span class="f-size skel"></span>
+                      <span class="f-date skel"></span>
+                      <span class="f-built skel"></span>
+                    </div>
+                  </div>
+                  <a class="dl-btn" href="https://github.com/mahfujarr/patchpile/releases" target="_blank"
+                    rel="noopener">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"
+                      stroke-linejoin="round">
+                      <path d="M12 3v12m0 0 4-4m-4 4-4-4M5 21h14" />
+                    </svg>
+                    <span>Try build</span>
+                  </a>
+                </div>
+              </div>
+            </details>
           </div>
         </div>
         <a class="dl-btn" href="https://github.com/mahfujarr/patchpile/releases" target="_blank">
@@ -1002,7 +1161,7 @@
 
     // --- Release Management and APIs ---
     (function () {
-      const apps = document.querySelectorAll('.app');
+      const releaseCards = document.querySelectorAll('[data-repo][data-patch-source][data-asset-match]');
 
       setTimeout(() => {
         const el = document.getElementById('last-sync-date');
@@ -1022,10 +1181,36 @@
         return `${datePart}, ${timePart}`;
       }
 
+      function formatBuiltDate(iso) {
+        const d = new Date(iso);
+        if (isNaN(d.getTime())) return 'recent';
+        return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      }
+
       async function getReleasesList(repo) {
         const res = await fetch(`https://api.github.com/repos/${repo}/releases?per_page=30`);
         if (!res.ok) throw new Error('rate limited or context missing');
         return res.json();
+      }
+
+      function pickLatestMatchingRelease(releases, patchSource) {
+        return (releases || [])
+          .filter(r => !r.draft && r.tag_name && r.tag_name.endsWith(`-${patchSource}`))
+          .sort((a, b) => {
+            const aTime = Date.parse(a.published_at || a.created_at || 0);
+            const bTime = Date.parse(b.published_at || b.created_at || 0);
+            return bTime - aTime;
+          });
+      }
+
+      function pickApkAsset(release, match) {
+        if (!release) return null;
+        const assets = release.assets || [];
+        const normalized = String(match || '').toLowerCase();
+        return assets.find(a => {
+          const name = String(a.name || '').toLowerCase();
+          return name.endsWith('.apk') && name.includes(normalized);
+        }) || null;
       }
 
       // --- Independent Global Actions Timeline Execution ---
@@ -1044,9 +1229,9 @@
       // --- Application Release Mapping Engine ---
       (async () => {
         const repoGroups = {};
-        apps.forEach(app => {
-          const repo = app.dataset.repo;
-          (repoGroups[repo] = repoGroups[repo] || []).push(app);
+        releaseCards.forEach(card => {
+          const repo = card.dataset.repo;
+          (repoGroups[repo] = repoGroups[repo] || []).push(card);
         });
 
         for (const [repo, group] of Object.entries(repoGroups)) {
@@ -1054,45 +1239,57 @@
           try {
             releases = await getReleasesList(repo);
           } catch (e) {
-            group.forEach(app => {
-              app.querySelector('.f-size')?.remove();
-              app.querySelector('.f-built')?.remove();
+            group.forEach(card => {
+              card.querySelector('.f-size')?.remove();
+              card.querySelector('.f-built')?.remove();
             });
             continue;
           }
 
-          group.forEach(app => {
-            const patchSource = app.dataset.patchSource;
-            const match = app.dataset.assetMatch;
-            const sizeEl = app.querySelector('.f-size');
-            const builtEl = app.querySelector('.f-built');
-            const versionEl = app.querySelector('.v-num');
-            const dlBtn = app.querySelector('.dl-btn');
+          group.forEach(card => {
+            const patchSource = card.dataset.patchSource;
+            const match = card.dataset.assetMatch;
+            const sizeEl = card.querySelector('.f-size');
+            const dateEl = card.querySelector('.f-date');
+            const builtEl = card.querySelector('.f-built');
+            const versionEl = card.querySelector('.v-num');
+            const dlBtn = card.querySelector(':scope > .dl-btn') || card.querySelector('.dl-btn');
 
-            const data = releases.find(r => r.tag_name && r.tag_name.endsWith(`-${patchSource}`)) || null;
-            if (!data) {
+            const matchedReleases = pickLatestMatchingRelease(releases, patchSource);
+            let data = null;
+            let asset = null;
+
+            for (const rel of matchedReleases) {
+              const relAsset = pickApkAsset(rel, match);
+              if (relAsset) {
+                data = rel;
+                asset = relAsset;
+                break;
+              }
+            }
+
+            if (!data || !asset) {
               sizeEl?.remove();
+              dateEl?.remove();
               builtEl?.remove();
               return;
             }
 
-            const asset = (data.assets || []).find(a => a.name.includes(match));
-            if (asset) {
-              sizeEl.textContent = formatBytes(asset.size);
-              sizeEl.classList.remove('skel');
-              dlBtn.href = asset.browser_download_url;
+            sizeEl.textContent = formatBytes(asset.size);
+            sizeEl.classList.remove('skel');
+            dlBtn.href = asset.browser_download_url;
 
-              const vMatch = asset.name.match(/v?([\d.]+)-arm64/);
-              if (vMatch) versionEl.textContent = 'v' + vMatch[1];
+            const vMatch = asset.name.match(/v?([\d.]+)-arm64/);
+            if (vMatch) versionEl.textContent = 'v' + vMatch[1];
 
-              const builtSource = asset.updated_at || data.published_at;
-              if (builtEl && builtSource) {
-                builtEl.textContent = 'Build time: ' + formatBuiltAt(builtSource);
-                builtEl.classList.remove('skel');
-              }
-            } else {
-              sizeEl?.remove();
-              builtEl?.remove();
+            const builtSource = asset.updated_at || data.published_at;
+            if (builtEl && builtSource) {
+              builtEl.textContent = 'Build time: ' + formatBuiltAt(builtSource);
+              builtEl.classList.remove('skel');
+            }
+            if (dateEl && builtSource) {
+              dateEl.textContent = 'Build date: ' + formatBuiltDate(builtSource);
+              dateEl.classList.remove('skel');
             }
           });
         }
