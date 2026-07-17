@@ -48,7 +48,7 @@ def _build(target_app: str | None = None, arch_override: str | None = None) -> i
     data = load_toml(CONFIG_PATH)
     main_cfg = parse_config(data)
     pr(f"Loaded config '{CONFIG_PATH}'")
-    entries: list[AppEntry] = [e for e in parse_app_entries(data, main_cfg) if (not target_app and e.enabled) or (target_app and e.table == target_app)]
+    entries: list[AppEntry] = [e for e in parse_app_entries(data, main_cfg) if e.enabled and (not target_app or e.table == target_app)]
     if target_app and not entries:
         abort(f"App '{target_app}' not found in config")
 
