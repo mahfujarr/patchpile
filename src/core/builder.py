@@ -241,7 +241,7 @@ def run_build(entries: list[AppEntry], config: Config, net: NetworkManager) -> b
     for m in block_re.finditer(raw):
         (cli_blocks if m.group(1) == "CLI" else patch_blocks).append(m.group())
     changelogs = "".join(cli_blocks) + "".join(patch_blocks)
-    microg_line = "▶️ » Install [MicroG-RE](https://github.com/MorpheApp/MicroG-RE/releases) to enable Google account sign-in for supported apps\n"
-    Path("build.md").write_text("\n".join([*log_lines, "", microg_line, changelogs]), encoding="utf-8")
+    #microg_line = "▶️ » Install [MicroG-RE](https://github.com/MorpheApp/MicroG-RE/releases) to enable Google account sign-in for supported apps\n"
+    Path("build.md").write_text("\n".join([*log_lines, "", changelogs]), encoding="utf-8")
     pr("Done")
     return True
