@@ -54,7 +54,7 @@ arch = "arm64-v8a"
 
 
 [Google-Photos]
-brand = "de-vanced"
+brand = "rushi"
 apkmirror-dlurl = "https://www.apkmirror.com/apk/google-inc/photos/"
 uptodown-dlurl = "https://google-photos.en.uptodown.com/android"
 arch = "arm64-v8a"
