@@ -54,12 +54,12 @@ arch = "arm64-v8a"
 
 
 [Google-Photos]
-brand = "rushi"
+brand = "de-vanced"
 apkmirror-dlurl = "https://www.apkmirror.com/apk/google-inc/photos/"
 uptodown-dlurl = "https://google-photos.en.uptodown.com/android"
 arch = "arm64-v8a"
 version = "latest"
-#patcher-args = "-e 'Enable DCIM folders backup control' -e 'GmsCore support' -e 'Spoof features' -e 'Change package name' -OcustomName='Photos'"
+#patcher-args = "-e 'Enable DCIM folders backup control'"
 
 [Google-Photos.patches]
-"github:rushiranpise/morphe-patches" = { version = "dev" }
+"github:RookieEnough/De-Vanced" = { version = "dev" }
