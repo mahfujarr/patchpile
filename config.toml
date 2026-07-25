@@ -59,7 +59,7 @@ apkmirror-dlurl = "https://www.apkmirror.com/apk/google-inc/photos/"
 uptodown-dlurl = "https://google-photos.en.uptodown.com/android"
 arch = "arm64-v8a"
 version = "latest"
-patcher-args = "-e 'Enable DCIM folders backup control' -e 'GmsCore support' -e 'Spoof features' -e 'Change package name' -OcustomName='Photos'"
+#patcher-args = "-e 'Enable DCIM folders backup control' -e 'GmsCore support' -e 'Spoof features' -e 'Change package name' -OcustomName='Photos'"
 
 [Google-Photos.patches]
 "github:rushiranpise/morphe-patches" = { version = "dev" }
