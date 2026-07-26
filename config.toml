@@ -60,6 +60,7 @@ enabled = true
 brand = "rushi"
 apkmirror-dlurl = "https://www.apkmirror.com/apk/google-inc/photos/"
 uptodown-dlurl = "https://google-photos.en.uptodown.com/android"
+patcher-args = "-e 'Enable DCIM folders backup control' -e 'GmsCore support' -e 'Spoof features' -OgooglePhotosSpoofProfile=pixel_xl -e 'Change package name' -OgooglePhotosAppName=Photos"
 
 [Google-Photos.patches]
 "github:rushiranpise/morphe-patches" = []
