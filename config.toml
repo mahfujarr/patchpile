@@ -45,11 +45,12 @@ patcher-args = "-e 'Change header' -Ocustom=icons/Music/header -e 'Custom brandi
 [Instagram]
 enabled = true
 brand = "piko"
-github-dlurl = "https://github.com/krvstek/uni-storage/releases/tag/instagram"
+nc-dlurl ="https://cloud.mahfujarr.me/s/Bzx6cPcPFmToTsw"
+#github-dlurl = "https://github.com/krvstek/uni-storage/releases/tag/instagram"
 # apkmirror-dlurl = "https://www.apkmirror.com/apk/instagram/instagram-instagram"
 # uptodown-dlurl = "https://instagram.en.uptodown.com/android"
 arch = "arm64-v8a"
-patcher-args = "-e 'Theme' -Oamoled=true"
+#patcher-args = "-e 'Theme' -Oamoled=true"
 
 [Instagram.patches]
 "github:crimera/piko" = { version = "dev" }
