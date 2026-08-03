@@ -11,6 +11,7 @@ on:
           - morphe
           - morphe-dev
           - piko
+          - piko-dev
           - hoo-dles
           - paresh
           - rushi
