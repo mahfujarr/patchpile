@@ -25,7 +25,7 @@ patcher-args = "-e 'Change header' -Ocustom=icons/Music/header -e 'Custom brandi
 "github:MorpheApp/morphe-patches" = { version = "dev" }
 
 [Instagram-Experimental]
-enabled = false
+enabled = true
 brand = "piko-dev"
 github-dlurl = "https://github.com/krvstek/uni-storage/releases/tag/instagram"
 # apkmirror-dlurl = "https://www.apkmirror.com/apk/instagram/instagram-instagram"
