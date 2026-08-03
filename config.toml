@@ -6,7 +6,7 @@ brand = "morphe-dev"
 apkmirror-dlurl = "https://www.apkmirror.com/apk/google-inc/youtube"
 uptodown-dlurl = "https://youtube.en.uptodown.com/android"
 arch = "arm64-v8a"
-version = "latest"
+version = "exp"
 patcher-args = "-e 'Change header' -Ocustom=icons/YouTube/header -e 'Custom branding' -OcustomName='YouTube'"
 
 [YouTube-Experimental.patches]
@@ -18,11 +18,24 @@ brand = "morphe-dev"
 apkmirror-dlurl = "https://www.apkmirror.com/apk/google-inc/youtube-music"
 uptodown-dlurl = "https://youtube-music.en.uptodown.com/android"
 arch = "arm64-v8a"
-version = "latest"
+version = "exp"
 patcher-args = "-e 'Change header' -Ocustom=icons/Music/header -e 'Custom branding' -OcustomName='YT Music'"
 
 [YT-Music-Experimental.patches]
 "github:MorpheApp/morphe-patches" = { version = "dev" }
+
+[Instagram-Experimental]
+enabled = true
+brand = "piko"
+github-dlurl = "https://github.com/krvstek/uni-storage/releases/tag/instagram"
+# apkmirror-dlurl = "https://www.apkmirror.com/apk/instagram/instagram-instagram"
+# uptodown-dlurl = "https://instagram.en.uptodown.com/android"
+arch = "arm64-v8a"
+version = "exp"
+#patcher-args = "-e 'Theme' -Oamoled=true"
+
+[Instagram-Experimental.patches]
+"github:crimera/piko" = { version = "dev" }
 
 [YouTube-Stable]
 apkmirror-dlurl = "https://www.apkmirror.com/apk/google-inc/youtube"
@@ -43,21 +56,23 @@ patcher-args = "-e 'Change header' -Ocustom=icons/Music/header -e 'Custom brandi
 "github:MorpheApp/morphe-patches" = []
 
 [Instagram]
+enabled = true
 brand = "piko"
 github-dlurl = "https://github.com/krvstek/uni-storage/releases/tag/instagram"
-apkmirror-dlurl = "https://www.apkmirror.com/apk/instagram/instagram-instagram"
-uptodown-dlurl = "https://instagram.en.uptodown.com/android"
+# apkmirror-dlurl = "https://www.apkmirror.com/apk/instagram/instagram-instagram"
+# uptodown-dlurl = "https://instagram.en.uptodown.com/android"
 arch = "arm64-v8a"
+#patcher-args = "-e 'Theme' -Oamoled=true"
 
 [Instagram.patches]
 "github:crimera/piko" = []
 
-
 [Google-Photos]
+enabled = true
 brand = "rushi"
 apkmirror-dlurl = "https://www.apkmirror.com/apk/google-inc/photos/"
 uptodown-dlurl = "https://google-photos.en.uptodown.com/android"
-version = "7.85.0.952162352"
+version = "latest"
 arch = "arm64-v8a"
 patcher-args = "-e 'Enable DCIM folders backup control' -e 'GmsCore support' -e 'Spoof features' -OgooglePhotosSpoofProfile=pixel_xl -e 'Change package name' -OgooglePhotosAppName=Photos"
 

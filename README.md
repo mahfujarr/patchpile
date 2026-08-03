@@ -10,7 +10,8 @@ Forked from [nvbangg/builder-for-morphe](https://github.com/nvbangg/builder-for-
 |---|---|---|
 | YouTube | [morphe](https://github.com/MorpheApp/morphe-patches) | No ads, background play, SponsorBlock |
 | YT Music | [morphe](https://github.com/MorpheApp/morphe-patches) | Background audio, no ads |
-| Google Photos | [de-vanced](https://github.com/RookieEnough/De-Vanced) | Unlimited backup tier, ads stripped |
+<!-- | Google Photos | [de-vanced](https://github.com/RookieEnough/De-Vanced) | Unlimited backup tier, ads stripped | -->
+| Google Photos | [rushi](https://github.com/rushiranpise/morphe-patches) | Unlimited backup tier, ads stripped |
 | Instagram | [piko](https://github.com/crimera/piko) | Ad-free feed, story/reel downloads |
 
 All builds are `arm64-v8a` only. Each app patches against a different upstream source, so they ship as separate GitHub releases rather than one combined build.
