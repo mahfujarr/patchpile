@@ -1,55 +1,41 @@
 # patchpile
 
-Automated builds of patched Android apps, published as GitHub releases and served through a small [download site](https://github.com/mahfujarr/patchpile) on top.
+**Personal fork. Not an original project.**
 
-Forked from [nvbangg/builder-for-morphe](https://github.com/nvbangg/builder-for-morphe), which does the heavy lifting — this fork just runs it on a schedule and points the output at a static front end.
+This repository is a personal fork of the excellent work by [nvbangg](https://github.com/nvbangg) and the upstream contributors. It has been modified only for my own personal use to automate builds, publish releases, and power my download page.
 
-## What's built
+I am not the author of the patching tools, patches, or build system. This repository mainly contains my configuration and GitHub Actions workflow.
 
-| App | Patch source | Notes |
-|---|---|---|
-| YouTube | [morphe](https://github.com/MorpheApp/morphe-patches) | No ads, background play, SponsorBlock |
-| YT Music | [morphe](https://github.com/MorpheApp/morphe-patches) | Background audio, no ads |
-| Google Photos | [rushi](https://github.com/rushiranpise/morphe-patches) | Unlimited backup tier, ads stripped |
-| Instagram | [piko](https://github.com/crimera/piko) | Ad-free feed, story/reel downloads |
+## What changed
 
-All builds are `arm64-v8a` only. Each app patches against a different upstream source, so they ship as separate GitHub releases rather than one combined build.
+- Personal build configuration (`config.toml`)
+- Automated GitHub Actions workflow
+- Release publishing
+- Static download site integration
 
-## Getting the APKs
+The actual patching logic and most of the implementation come from the upstream project.
 
-Grab them from the [Releases](https://github.com/mahfujarr/patchpile/releases) page, or use the download site, which pulls the latest version and file size live from the GitHub API on load instead of hardcoding them.
+## Upstream
 
-Most of these patched apps need [MicroG-RE](https://github.com/MorpheApp/MicroG-RE/releases) installed alongside them for Google sign-in to work.
+- Original fork: [nvbangg/builder-for-morphe](https://github.com/nvbangg/builder-for-morphe)
+- Original project foundation: [krvstek/uni-apks](https://github.com/krvstek/uni-apks)
 
-## How it works
+## Purpose
 
-This repo doesn't contain a patcher — it's a thin CI wrapper:
+This repository exists solely to build APKs for my own personal use.
 
-1. `config.toml` lists which apps to build and which patch source to use for each
-2. A GitHub Actions workflow ([`ci.yml`](.github/workflows/ci.yml)) runs the upstream Python CLI (`MorpheApp/morphe-cli`) against that config
-3. The CLI downloads the original APK, applies the patches, signs it, and the workflow uploads the result as a release asset
-
-Build status and logs live under [Actions](https://github.com/mahfujarr/patchpile/actions).
-
-## Building your own
-
-For maximum trust, don't take pre-built APKs from anyone — build your own:
-
-1. Fork [nvbangg/builder-for-morphe](https://github.com/nvbangg/builder-for-morphe) (star + watch it if you find it useful)
-2. Edit `config.toml` to pick which apps/patches you want — see [`CONTRIBUTING.md`](CONTRIBUTING.md)
-3. Run the CI workflow under the Actions tab (enable workflows first if it's your first run)
-4. Download the output from your fork's own Releases page
-
-## Disclaimer
-
-- Not affiliated with Google, Meta, Instagram, or any of the patch creators listed above.
-- Builds run entirely through public GitHub Actions for transparency — nothing is built or signed outside that pipeline.
-- For personal and educational use. If a build breaks after an upstream app update, it's a patch-source issue, not something this fork controls — check the linked patch repos above for status.
-- Source license: GPL-3.0, inherited from upstream.
+If you want to build your own patched apps, please fork and use the upstream repository instead of this one.
 
 ## Credits
 
-- [krvstek/uni-apks](https://github.com/krvstek/uni-apks) — original base
-- [nvbangg/builder-for-morphe](https://github.com/nvbangg/builder-for-morphe) — the fork this repo builds on, maintained by [krvstek](https://github.com/krvstek) and [nvbangg](https://github.com/nvbangg)
-- [j-hc](https://github.com/j-hc) — original build script foundation
-- [MorpheApp](https://github.com/MorpheApp), [RookieEnough](https://github.com/RookieEnough), [crimera](https://github.com/crimera) — patch sources used above
+All credit belongs to the original authors and maintainers, including:
+
+- nvbangg
+- krvstek
+- j-hc
+- MorpheApp
+- RookieEnough
+- crimera
+- All other upstream contributors
+
+Without their work, this repository would not exist.
