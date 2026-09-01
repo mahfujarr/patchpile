@@ -62,7 +62,7 @@ arch = "arm64-v8a"
 "github:crimera/piko" = []
 
 [Google-Photos]
-enabled = true
+enabled = false
 brand = "rushi"
 apkmirror-dlurl = "https://www.apkmirror.com/apk/google-inc/photos/"
 version = "latest"
