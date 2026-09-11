@@ -83,15 +83,24 @@
 
     <section class="list" id="app-list">
 
-      <div class="app" data-repo="mahfujarr/patchpile" data-patch-source="morphe" data-asset-match="youtube-stable">
+      <div class="app" data-build-state="stable" data-repo="mahfujarr/patchpile" data-patch-source="morphe"
+        data-asset-match="youtube-stable">
         <div class="icon yt">
-          <svg viewBox="0 0 24 24" fill="#ff3b3b">
+          <svg viewBox="0 0 24 24" fill="#ff0000">
             <path
-              d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.4.6A3 3 0 0 0 .5 6.2 31 31 0 0 0 0 12a31 31 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.9.6 9.4.6 9.4.6s7.5 0 9.4-.6a3 3 0 0 0 2.1-2.1A31 31 0 0 0 24 12a31 31 0 0 0-.5-5.8ZM9.6 15.5V8.5L15.8 12l-6.2 3.5Z" />
+              d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814z" />
+            <path d="M9.545 15.568V8.432L15.818 12l-6.273 3.568Z" fill="#ffffff" />
           </svg>
         </div>
         <div class="app-info">
-          <div class="app-name">YouTube <span class="patch">morphe</span></div>
+          <div class="app-name"><span class="app-name-label stable-name">YouTube <span
+                class="patch">morphe</span></span><span class="app-name-label experimental-name">YouTube <span
+                class="patch">morphe-dev</span></span></div>
+          <div class="build-variants" role="group" aria-label="Choose YouTube build">
+            <button class="build-variant-btn" type="button" data-build="stable" aria-pressed="true">stable</button>
+            <button class="build-variant-btn" type="button" data-build="experimental"
+              aria-pressed="false">experimental</button>
+          </div>
           <div class="app-desc">No ads, background play, SponsorBlock built in.</div>
           <div class="app-version">
             <span class="v-num"></span>
@@ -105,7 +114,6 @@
                 <div class="exp-item" data-repo="mahfujarr/patchpile" data-patch-source="morphe-dev"
                   data-asset-match="youtube-experimental">
                   <div class="exp-main">
-                    <span class="exp-title">YouTube Exp. <span class="patch">morphe-dev</span></span>
                     <div class="exp-version">
                       <span class="v-num"></span>
                       <span class="f-size skel"></span>
@@ -150,17 +158,33 @@
           </svg>
           <span>Download</span>
         </a>
+        <a class="dl-btn experimental-dl-btn" href="https://github.com/mahfujarr/patchpile/releases">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"
+            stroke-linejoin="round">
+            <path d="M12 3v12m0 0 4-4m-4 4-4-4M5 21h14" />
+          </svg>
+          <span>Download Experimental</span>
+        </a>
       </div>
 
-      <div class="app" data-repo="mahfujarr/patchpile" data-patch-source="morphe" data-asset-match="yt-music-stable">
+      <div class="app" data-build-state="stable" data-repo="mahfujarr/patchpile" data-patch-source="morphe"
+        data-asset-match="yt-music-stable">
         <div class="icon ytm">
-          <svg viewBox="0 0 24 24" fill="#ff7a3d">
+          <svg viewBox="0 0 24 24" fill="#ff0000">
             <path
-              d="M12 0a12 12 0 1 0 0 24 12 12 0 0 0 0-24Zm0 19a7 7 0 1 1 0-14 7 7 0 0 1 0 14Zm0-12.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11ZM10 15.5v-7l6 3.5-6 3.5Z" />
+              d="M12 0C5.376 0 0 5.376 0 12s5.376 12 12 12 12-5.376 12-12S18.624 0 12 0zm0 19.104c-3.924 0-7.104-3.18-7.104-7.104S8.076 4.896 12 4.896s7.104 3.18 7.104 7.104-3.18 7.104-7.104 7.104zm0-13.332c-3.432 0-6.228 2.796-6.228 6.228S8.568 18.228 12 18.228s6.228-2.796 6.228-6.228S15.432 5.772 12 5.772z" />
+            <path d="m9.684 15.54 6.132-3.54-6.132-3.54v7.08Z" fill="#ffffff" />
           </svg>
         </div>
         <div class="app-info">
-          <div class="app-name">YT Music <span class="patch">morphe</span></div>
+          <div class="app-name"><span class="app-name-label stable-name">YT Music <span
+                class="patch">morphe</span></span><span class="app-name-label experimental-name">YT Music <span
+                class="patch">morphe-dev</span></span></div>
+          <div class="build-variants" role="group" aria-label="Choose YT Music build">
+            <button class="build-variant-btn" type="button" data-build="stable" aria-pressed="true">stable</button>
+            <button class="build-variant-btn" type="button" data-build="experimental"
+              aria-pressed="false">experimental</button>
+          </div>
           <div class="app-desc">Background audio, no ads, sleep timer restored.</div>
           <div class="app-version">
             <span class="v-num"></span>
@@ -174,7 +198,6 @@
                 <div class="exp-item" data-repo="mahfujarr/patchpile" data-patch-source="morphe-dev"
                   data-asset-match="yt-music-experimental">
                   <div class="exp-main">
-                    <span class="exp-title">YT Music Exp. <span class="patch">morphe-dev</span></span>
                     <div class="exp-version">
                       <span class="v-num"></span>
                       <span class="f-size skel"></span>
@@ -219,24 +242,28 @@
           </svg>
           <span>Download</span>
         </a>
+        <a class="dl-btn experimental-dl-btn" href="https://github.com/mahfujarr/patchpile/releases">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"
+            stroke-linejoin="round">
+            <path d="M12 3v12m0 0 4-4m-4 4-4-4M5 21h14" />
+          </svg>
+          <span>Download Experimental</span>
+        </a>
       </div>
 
       <div id="gphotos-devanced" class="app gphotos-variant" data-variant="devanced" data-repo="mahfujarr/patchpile"
         data-patch-source="devanced" data-asset-match="gphotos-devanced" hidden>
         <div class="icon gph">
-          <svg viewBox="0 0 24 24" fill="#ffcc33">
-            <path
-              d="M12 0c-.3 6.1-5.2 11-11.3 11.3 6.1.3 11 5.2 11.3 11.3.3-6.1 5.2-11 11.3-11.3C17.2 11 12.3 6.1 12 0Z" />
-          </svg>
+          <img src="https://www.gstatic.com/images/branding/product/2x/photos_96dp.png" alt="" aria-hidden="true" />
         </div>
         <div class="app-info">
-          <div class="app-name">Google Photos <span class="gphotos-variants" role="group"
-              aria-label="Choose Google Photos version">
-              <button class="gphotos-variant-btn" type="button" data-variant="rushi" aria-controls="gphotos-rushi"
-                aria-pressed="true">rushi</button>
-              <button class="gphotos-variant-btn" type="button" data-variant="devanced" aria-controls="gphotos-devanced"
-                aria-pressed="false">devanced</button>
-            </span></div>
+          <div class="app-name">Google Photos <span class="patch">devanced</span></div>
+          <div class="gphotos-variants" role="group" aria-label="Choose Google Photos version">
+            <button class="gphotos-variant-btn" type="button" data-variant="rushi" aria-controls="gphotos-rushi"
+              aria-pressed="true">rushi</button>
+            <button class="gphotos-variant-btn" type="button" data-variant="devanced" aria-controls="gphotos-devanced"
+              aria-pressed="false">devanced</button>
+          </div>
           <div class="app-desc">Unlimited backup tier unlocked, ads stripped.</div>
           <div class="app-version">
             <span class="v-num"></span>
@@ -256,19 +283,16 @@
       <div id="gphotos-rushi" class="app gphotos-variant" data-variant="rushi" data-repo="mahfujarr/patchpile"
         data-patch-source="rushi" data-asset-match="google-photos-rushi">
         <div class="icon gph">
-          <svg viewBox="0 0 24 24" fill="#ffcc33">
-            <path
-              d="M12 0c-.3 6.1-5.2 11-11.3 11.3 6.1.3 11 5.2 11.3 11.3.3-6.1 5.2-11 11.3-11.3C17.2 11 12.3 6.1 12 0Z" />
-          </svg>
+          <img src="https://www.gstatic.com/images/branding/product/2x/photos_96dp.png" alt="" aria-hidden="true" />
         </div>
         <div class="app-info">
-          <div class="app-name">Google Photos <span class="gphotos-variants" role="group"
-              aria-label="Choose Google Photos version">
-              <button class="gphotos-variant-btn" type="button" data-variant="rushi" aria-controls="gphotos-rushi"
-                aria-pressed="true">rushi</button>
-              <button class="gphotos-variant-btn" type="button" data-variant="devanced" aria-controls="gphotos-devanced"
-                aria-pressed="false">devanced</button>
-            </span></div>
+          <div class="app-name">Google Photos <span class="patch">rushi</span></div>
+          <div class="gphotos-variants" role="group" aria-label="Choose Google Photos version">
+            <button class="gphotos-variant-btn" type="button" data-variant="rushi" aria-controls="gphotos-rushi"
+              aria-pressed="true">rushi</button>
+            <button class="gphotos-variant-btn" type="button" data-variant="devanced" aria-controls="gphotos-devanced"
+              aria-pressed="false">devanced</button>
+          </div>
           <div class="app-desc">Unlimited backup tier unlocked, ads stripped.</div>
           <div class="app-version">
             <span class="v-num"></span>
@@ -285,16 +309,33 @@
         </a>
       </div>
 
-      <div class="app" data-repo="mahfujarr/patchpile" data-patch-source="piko" data-asset-match="instagram-piko">
+      <div class="app" data-build-state="stable" data-repo="mahfujarr/patchpile" data-patch-source="piko"
+        data-asset-match="instagram-piko">
         <div class="icon ig">
-          <svg viewBox="0 0 24 24" fill="none" stroke="#d62f8e" stroke-width="2">
-            <rect x="2.5" y="2.5" width="19" height="19" rx="5.5" />
-            <circle cx="12" cy="12" r="4.3" />
-            <circle cx="17.4" cy="6.6" r="1.1" fill="#d62f8e" stroke="none" />
+          <svg viewBox="0 0 24 24">
+            <defs>
+              <linearGradient id="instagram-gradient" x1="3" y1="21" x2="21" y2="3" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#ffdc80" />
+                <stop offset=".35" stop-color="#fcaf45" />
+                <stop offset=".65" stop-color="#e1306c" />
+                <stop offset="1" stop-color="#833ab4" />
+              </linearGradient>
+            </defs>
+            <rect x="2.5" y="2.5" width="19" height="19" rx="5.5" fill="url(#instagram-gradient)" />
+            <rect x="6.5" y="6.5" width="11" height="11" rx="3.5" fill="none" stroke="#ffffff" stroke-width="1.8" />
+            <circle cx="12" cy="12" r="2.7" fill="none" stroke="#ffffff" stroke-width="1.8" />
+            <circle cx="17.2" cy="6.8" r="1.1" fill="#ffffff" />
           </svg>
         </div>
         <div class="app-info">
-          <div class="app-name">Instagram <span class="patch">piko</span></div>
+          <div class="app-name"><span class="app-name-label stable-name">Instagram <span
+                class="patch">piko</span></span><span class="app-name-label experimental-name">Instagram <span
+                class="patch">piko-dev</span></span></div>
+          <div class="build-variants" role="group" aria-label="Choose Instagram build">
+            <button class="build-variant-btn" type="button" data-build="stable" aria-pressed="true">stable</button>
+            <button class="build-variant-btn" type="button" data-build="experimental"
+              aria-pressed="false">experimental</button>
+          </div>
           <div class="app-desc">Ad-free feed, download stories &amp; reels, no tracking.</div>
           <div class="app-version">
             <span class="v-num"></span>
@@ -308,7 +349,6 @@
                 <div class="exp-item" data-repo="mahfujarr/patchpile" data-patch-source="piko-dev"
                   data-asset-match="instagram-experimental">
                   <div class="exp-main">
-                    <span class="exp-title">Instagram Exp. <span class="patch">piko-dev</span></span>
                     <div class="exp-version">
                       <span class="v-num"></span>
                       <span class="f-size skel"></span>
@@ -333,6 +373,13 @@
             <path d="M12 3v12m0 0 4-4m-4 4-4-4M5 21h14" />
           </svg>
           <span>Download</span>
+        </a>
+        <a class="dl-btn experimental-dl-btn" href="https://github.com/mahfujarr/patchpile/releases">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"
+            stroke-linejoin="round">
+            <path d="M12 3v12m0 0 4-4m-4 4-4-4M5 21h14" />
+          </svg>
+          <span>Download Experimental</span>
         </a>
       </div>
 

@@ -44,6 +44,24 @@
     });
   });
 
+  document.querySelectorAll(".build-variant-btn").forEach((button) => {
+    button.addEventListener("click", () => {
+      const app = button.closest(".app");
+      const experimentalMenu = app?.querySelector(".exp-menu");
+      const selectedBuild = button.dataset.build;
+      if (!app || !experimentalMenu || !selectedBuild) return;
+
+      app.dataset.buildState = selectedBuild;
+      experimentalMenu.open = selectedBuild === "experimental";
+      app.querySelectorAll(".build-variant-btn").forEach((variantButton) => {
+        variantButton.setAttribute(
+          "aria-pressed",
+          String(variantButton.dataset.build === selectedBuild),
+        );
+      });
+    });
+  });
+
   setTimeout(() => {
     const el = document.getElementById("last-sync-date");
     if (el && el.textContent === "checking…") el.textContent = "see GitHub";
@@ -285,6 +303,13 @@
         sizeEl.textContent = formatBytes(asset.size);
         sizeEl.classList.remove("skel");
         dlBtn.href = asset.browser_download_url;
+        if (card.classList.contains("exp-item")) {
+          const experimentalBtn = card
+            .closest(".app")
+            ?.querySelector(".experimental-dl-btn");
+          if (experimentalBtn)
+            experimentalBtn.href = asset.browser_download_url;
+        }
 
         const vMatch = asset.name.match(/v?([\d.]+)-arm64/);
         if (vMatch) versionEl.textContent = "Ver: " + vMatch[1];
