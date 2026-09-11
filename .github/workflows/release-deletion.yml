@@ -16,13 +16,15 @@ jobs:
   cleanup:
     runs-on: ubuntu-latest
     steps:
-      - name: Delete releases older than the two newest per source
+      - name: Delete releases older than the three newest per source
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh api --paginate "repos/$GITHUB_REPOSITORY/releases?per_page=100" \
-            --jq '.[] | select(.draft == false) | .tag_name' \
-            | awk '{ tag = $0; source = $0; sub(/^[^-]*-/, "", source); if (++count[source] > 2) print tag }' \
+          gh api --paginate "repos/$GITHUB_REPOSITORY/git/matching-refs/tags" \
+            --jq '.[] | .ref | sub("^refs/tags/"; "")' \
+            | sort -r \
+            | awk '/^[0-9][0-9]\.[0-9][0-9]\.[0-9][0-9]-/ { tag = $0; source = $0; sub(/^[^-]*-/, "", source); if (++count[source] > 3) print tag }' \
             | while read -r tag; do
-                gh release delete "$tag" --repo "$GITHUB_REPOSITORY" --yes --cleanup-tag
+                gh release delete "$tag" --repo "$GITHUB_REPOSITORY" --yes || true
+                gh api --method DELETE "repos/$GITHUB_REPOSITORY/git/refs/tags/$tag"
               done
