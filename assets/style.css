@@ -432,6 +432,40 @@ h1 .accent {
   border-top: 1px solid var(--line-soft);
 }
 
+.gphotos-variants {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.gphotos-variant-btn {
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: var(--bg-raised);
+  color: var(--text-faint);
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 500;
+  cursor: pointer;
+  min-height: 26px;
+  padding: 3px 7px;
+  transition:
+    background 0.15s,
+    border-color 0.15s,
+    color 0.15s;
+}
+
+.gphotos-variant-btn:hover,
+.gphotos-variant-btn[aria-pressed="true"] {
+  border-color: var(--accent);
+  background: var(--accent-dim);
+  color: var(--accent);
+}
+
+.gphotos-variant[hidden] {
+  display: none;
+}
+
 .app {
   border-bottom: 1px solid var(--line-soft);
   padding: 30px 0;

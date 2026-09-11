@@ -221,8 +221,8 @@
         </a>
       </div>
 
-      <div class="app" data-repo="mahfujarr/patchpile" data-patch-source="devanced"
-        data-asset-match="gphotos-devanced">
+      <div id="gphotos-devanced" class="app gphotos-variant" data-variant="devanced" data-repo="mahfujarr/patchpile"
+        data-patch-source="devanced" data-asset-match="gphotos-devanced" hidden>
         <div class="icon gph">
           <svg viewBox="0 0 24 24" fill="#ffcc33">
             <path
@@ -230,7 +230,13 @@
           </svg>
         </div>
         <div class="app-info">
-          <div class="app-name">Google Photos <span class="patch">devanced</span></div>
+          <div class="app-name">Google Photos <span class="gphotos-variants" role="group"
+              aria-label="Choose Google Photos version">
+              <button class="gphotos-variant-btn" type="button" data-variant="rushi" aria-controls="gphotos-rushi"
+                aria-pressed="true">rushi</button>
+              <button class="gphotos-variant-btn" type="button" data-variant="devanced" aria-controls="gphotos-devanced"
+                aria-pressed="false">devanced</button>
+            </span></div>
           <div class="app-desc">Unlimited backup tier unlocked, ads stripped.</div>
           <div class="app-version">
             <span class="v-num"></span>
@@ -246,7 +252,9 @@
           <span>Download</span>
         </a>
       </div>
-      <!-- <div class="app" data-repo="mahfujarr/patchpile" data-patch-source="rushi" data-asset-match="google-photos-rushi">
+
+      <div id="gphotos-rushi" class="app gphotos-variant" data-variant="rushi" data-repo="mahfujarr/patchpile"
+        data-patch-source="rushi" data-asset-match="google-photos-rushi">
         <div class="icon gph">
           <svg viewBox="0 0 24 24" fill="#ffcc33">
             <path
@@ -254,7 +262,13 @@
           </svg>
         </div>
         <div class="app-info">
-          <div class="app-name">Google Photos <span class="patch">rushi</span></div>
+          <div class="app-name">Google Photos <span class="gphotos-variants" role="group"
+              aria-label="Choose Google Photos version">
+              <button class="gphotos-variant-btn" type="button" data-variant="rushi" aria-controls="gphotos-rushi"
+                aria-pressed="true">rushi</button>
+              <button class="gphotos-variant-btn" type="button" data-variant="devanced" aria-controls="gphotos-devanced"
+                aria-pressed="false">devanced</button>
+            </span></div>
           <div class="app-desc">Unlimited backup tier unlocked, ads stripped.</div>
           <div class="app-version">
             <span class="v-num"></span>
@@ -269,7 +283,7 @@
           </svg>
           <span>Download</span>
         </a>
-      </div> -->
+      </div>
 
       <div class="app" data-repo="mahfujarr/patchpile" data-patch-source="piko" data-asset-match="instagram-piko">
         <div class="icon ig">

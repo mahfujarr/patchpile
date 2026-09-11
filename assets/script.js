@@ -23,6 +23,27 @@
     "[data-repo][data-patch-source][data-asset-match]",
   );
 
+  const googlePhotosCards = document.querySelectorAll(".gphotos-variant");
+  const googlePhotosButtons = document.querySelectorAll(".gphotos-variant-btn");
+
+  function setGooglePhotosVariant(variant) {
+    googlePhotosCards.forEach((card) => {
+      card.hidden = card.dataset.variant !== variant;
+    });
+    googlePhotosButtons.forEach((button) => {
+      button.setAttribute(
+        "aria-pressed",
+        String(button.dataset.variant === variant),
+      );
+    });
+  }
+
+  googlePhotosButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      setGooglePhotosVariant(button.dataset.variant);
+    });
+  });
+
   setTimeout(() => {
     const el = document.getElementById("last-sync-date");
     if (el && el.textContent === "checking…") el.textContent = "see GitHub";
@@ -273,7 +294,21 @@
           builtEl.textContent = "Build time: " + formatBuiltAt(builtSource);
           builtEl.classList.remove("skel");
         }
+
+        if (card.classList.contains("gphotos-variant")) {
+          card.dataset.releaseTime = data.published_at || data.created_at || "";
+        }
       });
+    }
+
+    const latestGooglePhotosCard = [...googlePhotosCards]
+      .filter((card) => card.dataset.releaseTime)
+      .sort(
+        (a, b) =>
+          Date.parse(b.dataset.releaseTime) - Date.parse(a.dataset.releaseTime),
+      )[0];
+    if (latestGooglePhotosCard) {
+      setGooglePhotosVariant(latestGooglePhotosCard.dataset.variant);
     }
 
     if (rateLimitTriggered) {
