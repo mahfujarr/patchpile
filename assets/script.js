@@ -22,6 +22,11 @@
   const releaseCards = document.querySelectorAll(
     "[data-repo][data-patch-source][data-asset-match]",
   );
+  const upstreamChangelogCache = new Map();
+
+  document.querySelectorAll(".changelog-link").forEach((link) => {
+    link.hidden = true;
+  });
 
   const googlePhotosCards = document.querySelectorAll(".gphotos-variant");
   const googlePhotosButtons = document.querySelectorAll(".gphotos-variant-btn");
@@ -52,7 +57,13 @@
       if (!app || !experimentalMenu || !selectedBuild) return;
 
       app.dataset.buildState = selectedBuild;
-      experimentalMenu.open = selectedBuild === "experimental";
+      if (selectedBuild === "experimental") {
+        experimentalMenu.open = true;
+        experimentalMenu.setAttribute("open", "");
+      } else {
+        experimentalMenu.open = false;
+        experimentalMenu.removeAttribute("open");
+      }
       app.querySelectorAll(".build-variant-btn").forEach((variantButton) => {
         variantButton.setAttribute(
           "aria-pressed",
@@ -231,6 +242,127 @@
     );
   }
 
+  function getUpstreamReleaseRef(release) {
+    const body = String(release?.body || "");
+    const match = body.match(
+      /https:\/\/github\.com\/([^/\s]+\/[^/\s]+)\/releases\/tag\/([^\s)]+)/,
+    );
+    return match ? { repo: match[1], tag: decodeURIComponent(match[2]) } : null;
+  }
+
+  async function getUpstreamChangelog(ref) {
+    if (!ref) return null;
+    const cacheKey = `${ref.repo}@${ref.tag}`;
+    if (!upstreamChangelogCache.has(cacheKey)) {
+      const token = localStorage.getItem("gh-token");
+      const headers = token ? { Authorization: `token ${token}` } : {};
+      const request = fetch(
+        `https://api.github.com/repos/${ref.repo}/releases/tags/${encodeURIComponent(ref.tag)}`,
+        { headers },
+      ).then((res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+      });
+      upstreamChangelogCache.set(cacheKey, request);
+    }
+    return upstreamChangelogCache.get(cacheKey);
+  }
+
+  function updateChangelog(card, release, upstreamRelease) {
+    const contentEl = card.querySelector(".changelog-content");
+    const linkEl = card.querySelector(".changelog-link");
+    const versionEl = card.querySelector(".app-version, .exp-version");
+    if (!contentEl) return;
+
+    const upstreamRef = getUpstreamReleaseRef(release);
+    const patchTag = upstreamRelease?.tag_name || upstreamRef?.tag;
+    if (versionEl && patchTag) {
+      let patchVersionEl = versionEl.querySelector(".p-num");
+      if (!patchVersionEl) {
+        patchVersionEl = document.createElement("span");
+        patchVersionEl.className = "p-num";
+        versionEl.append(patchVersionEl);
+      }
+      patchVersionEl.textContent = "Patch: " + patchTag;
+    }
+
+    if (!upstreamRelease) {
+      contentEl.textContent =
+        "The upstream changelog is unavailable right now.";
+      if (linkEl) linkEl.hidden = true;
+      return;
+    }
+
+    const notes = String(upstreamRelease.body || "").trim();
+    renderChangelog(
+      contentEl,
+      notes || "No release notes were provided for this build.",
+    );
+    if (linkEl && upstreamRelease.html_url) {
+      linkEl.href = upstreamRelease.html_url;
+      linkEl.hidden = false;
+    }
+  }
+
+  function appendInlineMarkdown(parent, text) {
+    const pattern = /(`[^`]+`|\*\*[^*]+\*\*|\[[^\]]+\]\(https?:\/\/[^)]+\))/g;
+    let cursor = 0;
+    for (const match of text.matchAll(pattern)) {
+      if (match.index > cursor)
+        parent.append(document.createTextNode(text.slice(cursor, match.index)));
+      const token = match[0];
+      if (token.startsWith("`")) {
+        const code = document.createElement("code");
+        code.textContent = token.slice(1, -1);
+        parent.append(code);
+      } else if (token.startsWith("**")) {
+        const strong = document.createElement("strong");
+        strong.textContent = token.slice(2, -2);
+        parent.append(strong);
+      } else {
+        const linkMatch = token.match(/^\[([^\]]+)\]\((https?:\/\/[^)]+)\)$/);
+        if (linkMatch) {
+          const link = document.createElement("a");
+          link.href = linkMatch[2];
+          link.target = "_blank";
+          link.rel = "noopener";
+          link.textContent = linkMatch[1];
+          parent.append(link);
+        }
+      }
+      cursor = match.index + token.length;
+    }
+    parent.append(document.createTextNode(text.slice(cursor)));
+  }
+
+  function renderChangelog(contentEl, markdown) {
+    contentEl.replaceChildren();
+    const lines = markdown.split(/\r?\n/);
+    let list = null;
+    for (const line of lines) {
+      const listMatch = line.match(/^\s*[-*]\s+(.+)$/);
+      if (listMatch) {
+        if (!list) {
+          list = document.createElement("ul");
+          contentEl.append(list);
+        }
+        const item = document.createElement("li");
+        appendInlineMarkdown(item, listMatch[1]);
+        list.append(item);
+        continue;
+      }
+      list = null;
+      if (!line.trim()) continue;
+      const headingMatch = line.match(/^#{1,3}\s+(.+)$/);
+      const paragraph = document.createElement(headingMatch ? "h4" : "p");
+      appendInlineMarkdown(
+        paragraph,
+        headingMatch ? headingMatch[1] : line.trim(),
+      );
+      contentEl.append(paragraph);
+    }
+  }
+
   // --- Independent Global Actions Timeline Execution ---
   (async () => {
     try {
@@ -274,6 +406,9 @@
             }
             card.querySelector(".f-size")?.remove();
             card.querySelector(".f-built")?.remove();
+            card
+              .querySelector(".changelog-content")
+              ?.replaceChildren("Release notes are unavailable right now.");
           });
         }
         continue;
@@ -312,9 +447,19 @@
           }
           sizeEl?.remove();
           builtEl?.remove();
+          card
+            .querySelector(".changelog-content")
+            ?.replaceChildren("No release notes are available for this build.");
           return;
         }
 
+        const upstreamRef = getUpstreamReleaseRef(data);
+        updateChangelog(card, data, null);
+        getUpstreamChangelog(upstreamRef)
+          .then((upstreamRelease) =>
+            updateChangelog(card, data, upstreamRelease),
+          )
+          .catch(() => updateChangelog(card, data, null));
         sizeEl.textContent = formatBytes(asset.size);
         sizeEl.classList.remove("skel");
         dlBtn.href = asset.browser_download_url;
@@ -418,31 +563,3 @@ if (!document.getElementById("spinner-style")) {
   style.textContent = `@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`;
   document.head.appendChild(style);
 }
-
-// --- Pure Text Visitor Counter Engine ---
-(async () => {
-  const counterEl = document.getElementById("visit-count");
-  if (!counterEl) return;
-
-  const hasVisited = sessionStorage.getItem("patchpile-hit");
-  // const hasVisited = localStorage.getItem('patchpile-hit');
-  const endpoint = hasVisited ? "get" : "hit";
-
-  try {
-    const res = await fetch(
-      `https://countapi.mileshilliard.com/api/v1/${endpoint}/patchpile_live`,
-    );
-    if (res.ok) {
-      const data = await res.json();
-      if (data && typeof data.value !== "undefined") {
-        counterEl.textContent = data.value.toLocaleString() + " times";
-        sessionStorage.setItem("patchpile-hit", "true");
-        // localStorage.setItem('patchpile-hit', 'true');
-        return;
-      }
-    }
-    counterEl.textContent = "active";
-  } catch (e) {
-    counterEl.textContent = "online";
-  }
-})();

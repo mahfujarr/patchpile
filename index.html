@@ -7,6 +7,17 @@
   <title>patchpile</title>
   <meta name="description"
     content="Ad-free, de-Googled APK builds of YouTube, YT Music, Google Photos and Instagram. Pulled straight from the latest GitHub Actions release.">
+  <link rel="canonical" href="https://mahfujarr.me/patchpile/">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="patchpile">
+  <meta property="og:title" content="patchpile - patched APK releases">
+  <meta property="og:description"
+    content="Ad-free, de-Googled APK builds of YouTube, YT Music, Google Photos and Instagram.">
+  <meta property="og:url" content="https://mahfujarr.me/patchpile/">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="patchpile - patched APK releases">
+  <meta name="twitter:description"
+    content="Ad-free, de-Googled APK builds of YouTube, YT Music, Google Photos and Instagram.">
   <meta name="theme-color" content="#f7f7f7">
   <script>
     (function () {
@@ -15,8 +26,9 @@
       document.documentElement.setAttribute('data-theme', theme);
     })();
   </script>
-  <link rel="icon"
-    href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2222%22 fill=%22%232b3dda%22/><path d=%22M30 70 L30 35 L50 60 L70 35 L70 70%22 stroke=%22%23ffd900%22 stroke-width=%228%22 fill=%22none%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22/></svg>">
+  <link rel="icon" type="image/svg+xml" href="./assets/favicon.svg">
+  <link rel="apple-touch-icon" href="./assets/favicon.svg">
+  <script data-goatcounter="https://mahfu.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
   <link rel="stylesheet" href="./assets/style.css">
 </head>
 
@@ -25,13 +37,13 @@
   <header>
     <div class="wrap header-row">
       <div class="brand">
-        <span class="dot"></span>
+        <img class="brand-icon" src="./assets/favicon.svg" alt="" aria-hidden="true">
         <span><b>patchpile</b> <span class="full-label">· release mirror</span><span class="short-label">·
             releases</span></span>
       </div>
       <div class="header-right">
         <button class="theme-toggle" id="refresh-releases" type="button" aria-label="Refresh all release links"
-          title="Refresh all download links (clears cache)">
+          title="Check for new builds">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
             stroke-linejoin="round">
             <polyline points="1 4 1 10 7 10"></polyline>
@@ -107,6 +119,12 @@
             <span class="f-size skel"></span>
             <span class="f-built skel"></span>
           </div>
+          <details class="changelog-menu">
+            <summary>What's new?</summary>
+            <div class="changelog-content">Loading release notes...</div>
+            <a class="changelog-link" href="https://github.com/mahfujarr/patchpile/releases" target="_blank"
+              rel="noopener">View full release</a>
+          </details>
           <div class="app-exp">
             <details class="exp-menu">
               <summary>Experimental build</summary>
@@ -119,6 +137,12 @@
                       <span class="f-size skel"></span>
                       <span class="f-built skel"></span>
                     </div>
+                    <details class="changelog-menu">
+                      <summary>What's new?</summary>
+                      <div class="changelog-content">Loading release notes...</div>
+                      <a class="changelog-link" href="https://github.com/mahfujarr/patchpile/releases" target="_blank"
+                        rel="noopener">View full release</a>
+                    </details>
                   </div>
                   <a class="dl-btn" href="https://github.com/mahfujarr/patchpile/releases">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"
@@ -191,6 +215,12 @@
             <span class="f-size skel"></span>
             <span class="f-built skel"></span>
           </div>
+          <details class="changelog-menu">
+            <summary>What's new?</summary>
+            <div class="changelog-content">Loading release notes...</div>
+            <a class="changelog-link" href="https://github.com/mahfujarr/patchpile/releases" target="_blank"
+              rel="noopener">View full release</a>
+          </details>
           <div class="app-exp">
             <details class="exp-menu">
               <summary>Experimental build</summary>
@@ -203,6 +233,12 @@
                       <span class="f-size skel"></span>
                       <span class="f-built skel"></span>
                     </div>
+                    <details class="changelog-menu">
+                      <summary>What's new?</summary>
+                      <div class="changelog-content">Loading release notes...</div>
+                      <a class="changelog-link" href="https://github.com/mahfujarr/patchpile/releases" target="_blank"
+                        rel="noopener">View full release</a>
+                    </details>
                   </div>
                   <a class="dl-btn" href="https://github.com/mahfujarr/patchpile/releases">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"
@@ -270,6 +306,12 @@
             <span class="f-size skel"></span>
             <span class="f-built skel"></span>
           </div>
+          <details class="changelog-menu">
+            <summary>What's new?</summary>
+            <div class="changelog-content">Loading release notes...</div>
+            <a class="changelog-link" href="https://github.com/mahfujarr/patchpile/releases" target="_blank"
+              rel="noopener">View full release</a>
+          </details>
         </div>
         <a class="dl-btn" href="https://github.com/mahfujarr/patchpile/releases">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"
@@ -299,6 +341,12 @@
             <span class="f-size skel"></span>
             <span class="f-built skel"></span>
           </div>
+          <details class="changelog-menu">
+            <summary>What's new?</summary>
+            <div class="changelog-content">Loading release notes...</div>
+            <a class="changelog-link" href="https://github.com/mahfujarr/patchpile/releases" target="_blank"
+              rel="noopener">View full release</a>
+          </details>
         </div>
         <a class="dl-btn" href="https://github.com/mahfujarr/patchpile/releases">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"
@@ -342,6 +390,12 @@
             <span class="f-size skel"></span>
             <span class="f-built skel"></span>
           </div>
+          <details class="changelog-menu">
+            <summary>What's new?</summary>
+            <div class="changelog-content">Loading release notes...</div>
+            <a class="changelog-link" href="https://github.com/mahfujarr/patchpile/releases" target="_blank"
+              rel="noopener">View full release</a>
+          </details>
           <div class="app-exp">
             <details class="exp-menu">
               <summary>Experimental build</summary>
@@ -354,6 +408,12 @@
                       <span class="f-size skel"></span>
                       <span class="f-built skel"></span>
                     </div>
+                    <details class="changelog-menu">
+                      <summary>What's new?</summary>
+                      <div class="changelog-content">Loading release notes...</div>
+                      <a class="changelog-link" href="https://github.com/mahfujarr/patchpile/releases" target="_blank"
+                        rel="noopener">View full release</a>
+                    </details>
                   </div>
                   <a class="dl-btn" href="https://github.com/mahfujarr/patchpile/releases">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"
@@ -403,23 +463,29 @@
     </div>
 
     <section class="howto">
-      <h2>Install in just a few steps</h2>
-      <div class="steps">
-        <div class="step">
-          <div class="n">01</div>
-          <p>Download the <code>.apk</code> above, then allow "install unknown apps" for your browser when prompted.</p>
+      <details class="howto-details">
+        <summary>
+          <h2>Install in just a few steps</h2>
+        </summary>
+        <div class="steps">
+          <div class="step">
+            <div class="n">01</div>
+            <p>Download the <code>.apk</code> above, then allow "install unknown apps" for your browser when prompted.
+            </p>
+          </div>
+          <div class="step">
+            <div class="n">02</div>
+            <p>Uninstall/disable the official Play Store version first - patched apps use a different signature and
+              won't
+              update over it.</p>
+          </div>
+          <div class="step">
+            <div class="n">03</div>
+            <p>If Google Play Protect's App scan prompt appears, tap on "Scan app" or "More options > Install without
+              scanning".</p>
+          </div>
         </div>
-        <div class="step">
-          <div class="n">02</div>
-          <p>Uninstall/disable the official Play Store version first - patched apps use a different signature and won't
-            update over it.</p>
-        </div>
-        <div class="step">
-          <div class="n">03</div>
-          <p>If Google Play Protect's App scan prompt appears, tap on "Scan app" or "More options > Install without
-            scanning".</p>
-        </div>
-      </div>
+      </details>
     </section>
 
     <div class="note">
@@ -440,10 +506,6 @@
           Mahfujar Rahman</a>
       </span>
       <div class="foot-links" style="display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
-        <span style="font-size: 13px; color: var(--text-faint);">
-          Total visited <b id="visit-count"
-            style="font-family: var(--mono); color: var(--text-dim); font-weight: 600;"></b>
-        </span>
         <a href="https://github.com/mahfujarr/patchpile/releases" target="_blank" rel="noopener">All releases</a>
         <a href="https://t.me/+9WZNgGgQuZ8zY2I1" rel="noopener">Telegram</a>
       </div>
