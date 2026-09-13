@@ -167,6 +167,17 @@
     }, 1000);
   }
 
+  async function getLocalManifest() {
+    if (!localManifest) {
+      const manifestRes = await fetch("./assets/releases.json", {
+        cache: "no-store",
+      });
+      if (!manifestRes.ok) throw new Error(`HTTP ${manifestRes.status}`);
+      localManifest = await manifestRes.json();
+    }
+    return localManifest;
+  }
+
   async function getReleasesList(repo) {
     const cacheKey = `releases_${repo}`;
     const cached = sessionStorage.getItem(cacheKey);
@@ -179,13 +190,8 @@
     }
 
     try {
-      if (!localManifest) {
-        const manifestRes = await fetch("./assets/releases.json", {
-          cache: "no-store",
-        });
-        if (manifestRes.ok) localManifest = await manifestRes.json();
-      }
-      const manifestReleases = localManifest?.repos?.[repo];
+      const manifest = await getLocalManifest();
+      const manifestReleases = manifest?.repos?.[repo];
       if (Array.isArray(manifestReleases)) {
         sessionStorage.setItem(cacheKey, JSON.stringify(manifestReleases));
         return manifestReleases;
@@ -366,6 +372,16 @@
   // --- Independent Global Actions Timeline Execution ---
   (async () => {
     try {
+      const manifest = await getLocalManifest();
+      const lastSync = manifest?.actions?.last_sync;
+      if (lastSync) {
+        document.getElementById("last-sync-date").textContent =
+          formatBuiltAt(lastSync);
+        return;
+      }
+    } catch (e) {}
+
+    try {
       const res = await fetch(
         `https://api.github.com/repos/mahfujarr/patchpile/actions/workflows/ci.yml/runs?per_page=1`,
       );
@@ -454,12 +470,16 @@
         }
 
         const upstreamRef = getUpstreamReleaseRef(data);
-        updateChangelog(card, data, null);
-        getUpstreamChangelog(upstreamRef)
-          .then((upstreamRelease) =>
-            updateChangelog(card, data, upstreamRelease),
-          )
-          .catch(() => updateChangelog(card, data, null));
+        if (data.upstream_release) {
+          updateChangelog(card, data, data.upstream_release);
+        } else {
+          updateChangelog(card, data, null);
+          getUpstreamChangelog(upstreamRef)
+            .then((upstreamRelease) =>
+              updateChangelog(card, data, upstreamRelease),
+            )
+            .catch(() => updateChangelog(card, data, null));
+        }
         sizeEl.textContent = formatBytes(asset.size);
         sizeEl.classList.remove("skel");
         dlBtn.href = asset.browser_download_url;
@@ -535,6 +555,21 @@
     const repo = row.dataset.repo;
     const versionEl = document.getElementById("ytdlnis-version");
     const linkEl = document.getElementById("ytdlnis-link");
+
+    try {
+      const manifest = await getLocalManifest();
+      const data = manifest?.ytdlnis;
+      if (data) {
+        const asset = (data.assets || []).find((a) =>
+          a.name.toLowerCase().endsWith(".apk"),
+        );
+        if (asset && linkEl) linkEl.href = asset.browser_download_url;
+        if (data.tag_name && versionEl) {
+          versionEl.textContent = ` (${data.tag_name.replace(/^v/, "v")})`;
+        }
+        return;
+      }
+    } catch (e) {}
 
     try {
       const res = await fetch(

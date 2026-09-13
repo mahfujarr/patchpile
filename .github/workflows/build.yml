@@ -209,13 +209,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPOSITORY: ${{ github.repository }}
         run: |
-          releases=$(gh api --paginate --slurp "repos/$REPOSITORY/releases?per_page=100" | jq 'add')
-          jq -n \
-            --arg generated_at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
-            --arg repo "$REPOSITORY" \
-            --argjson releases "$releases" \
-            '{generated_at: $generated_at, repos: {($repo): $releases}}' \
-            > assets/releases.json
+          uv run python -m src.scripts.site_manifest --repo "$REPOSITORY" --output assets/releases.json
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
