@@ -30,10 +30,36 @@
   const googlePhotosCards = document.querySelectorAll(".gphotos-variant");
   const googlePhotosButtons = document.querySelectorAll(".gphotos-variant-btn");
 
+  function setAppChangelogOpen(app, open) {
+    app?.querySelectorAll(".changelog-menu").forEach((menu) => {
+      menu.open = open;
+    });
+  }
+
+  document.querySelectorAll(".app").forEach((app) => {
+    app.querySelectorAll(".changelog-menu > summary").forEach((summary) => {
+      summary.addEventListener("click", (event) => {
+        event.preventDefault();
+        const menu = summary.parentElement;
+        setAppChangelogOpen(app, !menu.open);
+      });
+    });
+  });
+
   function setGooglePhotosVariant(variant) {
+    const currentCard = [...googlePhotosCards].find((card) => !card.hidden);
+    const changelogOpen = currentCard
+      ? [...currentCard.querySelectorAll(".changelog-menu")].some(
+          (menu) => menu.open,
+        )
+      : false;
     googlePhotosCards.forEach((card) => {
       card.hidden = card.dataset.variant !== variant;
     });
+    const nextCard = [...googlePhotosCards].find(
+      (card) => card.dataset.variant === variant,
+    );
+    setAppChangelogOpen(nextCard, changelogOpen);
     googlePhotosButtons.forEach((button) => {
       button.setAttribute(
         "aria-pressed",
@@ -55,6 +81,9 @@
       const selectedBuild = button.dataset.build;
       if (!app || !experimentalMenu || !selectedBuild) return;
 
+      const changelogOpen = [...app.querySelectorAll(".changelog-menu")].some(
+        (menu) => menu.open,
+      );
       app.dataset.buildState = selectedBuild;
       if (selectedBuild === "experimental") {
         experimentalMenu.open = true;
@@ -63,6 +92,7 @@
         experimentalMenu.open = false;
         experimentalMenu.removeAttribute("open");
       }
+      setAppChangelogOpen(app, changelogOpen);
       app.querySelectorAll(".build-variant-btn").forEach((variantButton) => {
         variantButton.setAttribute(
           "aria-pressed",
@@ -171,7 +201,7 @@
       const manifestRes = await fetch(
         "https://raw.githubusercontent.com/mahfujarr/patchpile/main/assets/releases.json",
         {
-        cache: "no-store",
+          cache: "no-store",
         },
       );
       if (!manifestRes.ok) throw new Error(`HTTP ${manifestRes.status}`);
