@@ -22,8 +22,6 @@
   const releaseCards = document.querySelectorAll(
     "[data-repo][data-patch-source][data-asset-match]",
   );
-  const upstreamChangelogCache = new Map();
-  let manifestProvidesReleases = false;
 
   document.querySelectorAll(".changelog-link").forEach((link) => {
     link.hidden = true;
@@ -170,9 +168,12 @@
 
   async function getLocalManifest() {
     if (!localManifest) {
-      const manifestRes = await fetch("./assets/releases.json", {
+      const manifestRes = await fetch(
+        "https://raw.githubusercontent.com/mahfujarr/patchpile/main/assets/releases.json",
+        {
         cache: "no-store",
-      });
+        },
+      );
       if (!manifestRes.ok) throw new Error(`HTTP ${manifestRes.status}`);
       localManifest = await manifestRes.json();
     }
@@ -180,38 +181,12 @@
   }
 
   async function getReleasesList(repo) {
-    try {
-      const manifest = await getLocalManifest();
-      const manifestReleases = manifest?.repos?.[repo];
-      if (Array.isArray(manifestReleases)) {
-        manifestProvidesReleases = true;
-        return manifestReleases;
-      }
-    } catch (e) {}
-
-    const token = localStorage.getItem("gh-token");
-    const headers = token ? { Authorization: `token ${token}` } : {};
-    const res = await fetch(
-      `https://api.github.com/repos/${repo}/releases?per_page=100`,
-      { headers },
-    );
-
-    // Track rate limit
-    rateLimitRemaining = res.headers.get("x-ratelimit-remaining");
-    const rateLimitReset = res.headers.get("x-ratelimit-reset");
-    if (rateLimitRemaining !== null) {
-      console.log(
-        `GitHub API: ${rateLimitRemaining} calls remaining (resets at ${new Date(parseInt(rateLimitReset) * 1000).toLocaleTimeString()})`,
-      );
+    const manifest = await getLocalManifest();
+    const manifestReleases = manifest?.repos?.[repo];
+    if (!Array.isArray(manifestReleases)) {
+      throw new Error("Release manifest has no data for this repository");
     }
-
-    if (res.status === 403) {
-      if (rateLimitReset) startRateLimitCountdown(rateLimitReset);
-      throw new Error("GitHub API rate limited");
-    }
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
-    return data;
+    return manifestReleases;
   }
 
   function pickLatestMatchingRelease(releases, patchSource) {
@@ -238,40 +213,13 @@
     );
   }
 
-  function getUpstreamReleaseRef(release) {
-    const body = String(release?.body || "");
-    const match = body.match(
-      /https:\/\/github\.com\/([^/\s]+\/[^/\s]+)\/releases\/tag\/([^\s)]+)/,
-    );
-    return match ? { repo: match[1], tag: decodeURIComponent(match[2]) } : null;
-  }
-
-  async function getUpstreamChangelog(ref) {
-    if (!ref) return null;
-    const cacheKey = `${ref.repo}@${ref.tag}`;
-    if (!upstreamChangelogCache.has(cacheKey)) {
-      const token = localStorage.getItem("gh-token");
-      const headers = token ? { Authorization: `token ${token}` } : {};
-      const request = fetch(
-        `https://api.github.com/repos/${ref.repo}/releases/tags/${encodeURIComponent(ref.tag)}`,
-        { headers },
-      ).then((res) => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return res.json();
-      });
-      upstreamChangelogCache.set(cacheKey, request);
-    }
-    return upstreamChangelogCache.get(cacheKey);
-  }
-
-  function updateChangelog(card, release, upstreamRelease) {
+  function updateChangelog(card, upstreamRelease) {
     const contentEl = card.querySelector(".changelog-content");
     const linkEl = card.querySelector(".changelog-link");
     const versionEl = card.querySelector(".app-version, .exp-version");
     if (!contentEl) return;
 
-    const upstreamRef = getUpstreamReleaseRef(release);
-    const patchTag = upstreamRelease?.tag_name || upstreamRef?.tag;
+    const patchTag = upstreamRelease?.tag_name;
     if (versionEl && patchTag) {
       let patchVersionEl = versionEl.querySelector(".p-num");
       if (!patchVersionEl) {
@@ -367,21 +315,6 @@
       if (lastSync) {
         document.getElementById("last-sync-date").textContent =
           formatBuiltAt(lastSync);
-        return;
-      }
-    } catch (e) {}
-
-    try {
-      const res = await fetch(
-        `https://api.github.com/repos/mahfujarr/patchpile/actions/workflows/ci.yml/runs?per_page=1`,
-      );
-      if (res.ok) {
-        const data = await res.json();
-        if (data.workflow_runs && data.workflow_runs[0]) {
-          document.getElementById("last-sync-date").textContent = formatBuiltAt(
-            data.workflow_runs[0].updated_at,
-          );
-        }
       }
     } catch (e) {}
   })();
@@ -459,19 +392,7 @@
           return;
         }
 
-        const upstreamRef = getUpstreamReleaseRef(data);
-        if (data.upstream_release) {
-          updateChangelog(card, data, data.upstream_release);
-        } else if (!manifestProvidesReleases) {
-          updateChangelog(card, data, null);
-          getUpstreamChangelog(upstreamRef)
-            .then((upstreamRelease) =>
-              updateChangelog(card, data, upstreamRelease),
-            )
-            .catch(() => updateChangelog(card, data, null));
-        } else {
-          updateChangelog(card, data, null);
-        }
+        updateChangelog(card, data.upstream_release || null);
         sizeEl.textContent = formatBytes(asset.size);
         sizeEl.classList.remove("skel");
         dlBtn.href = asset.browser_download_url;
@@ -535,7 +456,6 @@
   (async () => {
     const row = document.getElementById("ytdlnis-row");
     if (!row) return;
-    const repo = row.dataset.repo;
     const versionEl = document.getElementById("ytdlnis-version");
     const linkEl = document.getElementById("ytdlnis-link");
 
@@ -551,24 +471,6 @@
           versionEl.textContent = ` (${data.tag_name.replace(/^v/, "v")})`;
         }
         return;
-      }
-    } catch (e) {}
-
-    try {
-      const res = await fetch(
-        `https://api.github.com/repos/${repo}/releases/latest`,
-      );
-      if (!res.ok) throw new Error("restricted");
-      const data = await res.json();
-
-      const asset = (data.assets || []).find((a) =>
-        a.name.toLowerCase().endsWith(".apk"),
-      );
-      if (asset && linkEl) {
-        linkEl.href = asset.browser_download_url;
-      }
-      if (data.tag_name && versionEl) {
-        versionEl.textContent = ` (${data.tag_name.replace(/^v/, "v")})`;
       }
     } catch (e) {}
   })();
