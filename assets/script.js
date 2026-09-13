@@ -22,6 +22,12 @@
   const releaseCards = document.querySelectorAll(
     "[data-repo][data-patch-source][data-asset-match]",
   );
+  const upstreamChangelogCache = new Map();
+  let manifestProvidesReleases = false;
+
+  document.querySelectorAll(".changelog-link").forEach((link) => {
+    link.hidden = true;
+  });
 
   const googlePhotosCards = document.querySelectorAll(".gphotos-variant");
   const googlePhotosButtons = document.querySelectorAll(".gphotos-variant-btn");
@@ -52,7 +58,13 @@
       if (!app || !experimentalMenu || !selectedBuild) return;
 
       app.dataset.buildState = selectedBuild;
-      experimentalMenu.open = selectedBuild === "experimental";
+      if (selectedBuild === "experimental") {
+        experimentalMenu.open = true;
+        experimentalMenu.setAttribute("open", "");
+      } else {
+        experimentalMenu.open = false;
+        experimentalMenu.removeAttribute("open");
+      }
       app.querySelectorAll(".build-variant-btn").forEach((variantButton) => {
         variantButton.setAttribute(
           "aria-pressed",
@@ -93,6 +105,7 @@
   let rateLimitTriggered = false;
   let rateLimitResetAt = null;
   let rateLimitTimer = null;
+  let localManifest = null;
 
   function formatCountdown(ms) {
     const totalSeconds = Math.max(0, Math.ceil(ms / 1000));
@@ -155,16 +168,26 @@
     }, 1000);
   }
 
-  async function getReleasesList(repo) {
-    const cacheKey = `releases_${repo}`;
-    const cached = sessionStorage.getItem(cacheKey);
-    if (cached) {
-      try {
-        return JSON.parse(cached);
-      } catch (e) {
-        sessionStorage.removeItem(cacheKey);
-      }
+  async function getLocalManifest() {
+    if (!localManifest) {
+      const manifestRes = await fetch("./assets/releases.json", {
+        cache: "no-store",
+      });
+      if (!manifestRes.ok) throw new Error(`HTTP ${manifestRes.status}`);
+      localManifest = await manifestRes.json();
     }
+    return localManifest;
+  }
+
+  async function getReleasesList(repo) {
+    try {
+      const manifest = await getLocalManifest();
+      const manifestReleases = manifest?.repos?.[repo];
+      if (Array.isArray(manifestReleases)) {
+        manifestProvidesReleases = true;
+        return manifestReleases;
+      }
+    } catch (e) {}
 
     const token = localStorage.getItem("gh-token");
     const headers = token ? { Authorization: `token ${token}` } : {};
@@ -188,7 +211,6 @@
     }
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
-    sessionStorage.setItem(cacheKey, JSON.stringify(data));
     return data;
   }
 
@@ -216,8 +238,139 @@
     );
   }
 
+  function getUpstreamReleaseRef(release) {
+    const body = String(release?.body || "");
+    const match = body.match(
+      /https:\/\/github\.com\/([^/\s]+\/[^/\s]+)\/releases\/tag\/([^\s)]+)/,
+    );
+    return match ? { repo: match[1], tag: decodeURIComponent(match[2]) } : null;
+  }
+
+  async function getUpstreamChangelog(ref) {
+    if (!ref) return null;
+    const cacheKey = `${ref.repo}@${ref.tag}`;
+    if (!upstreamChangelogCache.has(cacheKey)) {
+      const token = localStorage.getItem("gh-token");
+      const headers = token ? { Authorization: `token ${token}` } : {};
+      const request = fetch(
+        `https://api.github.com/repos/${ref.repo}/releases/tags/${encodeURIComponent(ref.tag)}`,
+        { headers },
+      ).then((res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+      });
+      upstreamChangelogCache.set(cacheKey, request);
+    }
+    return upstreamChangelogCache.get(cacheKey);
+  }
+
+  function updateChangelog(card, release, upstreamRelease) {
+    const contentEl = card.querySelector(".changelog-content");
+    const linkEl = card.querySelector(".changelog-link");
+    const versionEl = card.querySelector(".app-version, .exp-version");
+    if (!contentEl) return;
+
+    const upstreamRef = getUpstreamReleaseRef(release);
+    const patchTag = upstreamRelease?.tag_name || upstreamRef?.tag;
+    if (versionEl && patchTag) {
+      let patchVersionEl = versionEl.querySelector(".p-num");
+      if (!patchVersionEl) {
+        patchVersionEl = document.createElement("span");
+        patchVersionEl.className = "p-num";
+        versionEl.append(patchVersionEl);
+      }
+      patchVersionEl.textContent = "Patch: " + patchTag;
+    }
+
+    if (!upstreamRelease) {
+      contentEl.textContent =
+        "The upstream changelog is unavailable right now.";
+      if (linkEl) linkEl.hidden = true;
+      return;
+    }
+
+    const notes = String(upstreamRelease.body || "").trim();
+    renderChangelog(
+      contentEl,
+      notes || "No release notes were provided for this build.",
+    );
+    if (linkEl && upstreamRelease.html_url) {
+      linkEl.href = upstreamRelease.html_url;
+      linkEl.hidden = false;
+    }
+  }
+
+  function appendInlineMarkdown(parent, text) {
+    const pattern = /(`[^`]+`|\*\*[^*]+\*\*|\[[^\]]+\]\(https?:\/\/[^)]+\))/g;
+    let cursor = 0;
+    for (const match of text.matchAll(pattern)) {
+      if (match.index > cursor)
+        parent.append(document.createTextNode(text.slice(cursor, match.index)));
+      const token = match[0];
+      if (token.startsWith("`")) {
+        const code = document.createElement("code");
+        code.textContent = token.slice(1, -1);
+        parent.append(code);
+      } else if (token.startsWith("**")) {
+        const strong = document.createElement("strong");
+        strong.textContent = token.slice(2, -2);
+        parent.append(strong);
+      } else {
+        const linkMatch = token.match(/^\[([^\]]+)\]\((https?:\/\/[^)]+)\)$/);
+        if (linkMatch) {
+          const link = document.createElement("a");
+          link.href = linkMatch[2];
+          link.target = "_blank";
+          link.rel = "noopener";
+          link.textContent = linkMatch[1];
+          parent.append(link);
+        }
+      }
+      cursor = match.index + token.length;
+    }
+    parent.append(document.createTextNode(text.slice(cursor)));
+  }
+
+  function renderChangelog(contentEl, markdown) {
+    contentEl.replaceChildren();
+    const lines = markdown.split(/\r?\n/);
+    let list = null;
+    for (const line of lines) {
+      const listMatch = line.match(/^\s*[-*]\s+(.+)$/);
+      if (listMatch) {
+        if (!list) {
+          list = document.createElement("ul");
+          contentEl.append(list);
+        }
+        const item = document.createElement("li");
+        appendInlineMarkdown(item, listMatch[1]);
+        list.append(item);
+        continue;
+      }
+      list = null;
+      if (!line.trim()) continue;
+      const headingMatch = line.match(/^#{1,3}\s+(.+)$/);
+      const paragraph = document.createElement(headingMatch ? "h4" : "p");
+      appendInlineMarkdown(
+        paragraph,
+        headingMatch ? headingMatch[1] : line.trim(),
+      );
+      contentEl.append(paragraph);
+    }
+  }
+
   // --- Independent Global Actions Timeline Execution ---
   (async () => {
+    try {
+      const manifest = await getLocalManifest();
+      const lastSync = manifest?.actions?.last_sync;
+      if (lastSync) {
+        document.getElementById("last-sync-date").textContent =
+          formatBuiltAt(lastSync);
+        return;
+      }
+    } catch (e) {}
+
     try {
       const res = await fetch(
         `https://api.github.com/repos/mahfujarr/patchpile/actions/workflows/ci.yml/runs?per_page=1`,
@@ -259,6 +412,9 @@
             }
             card.querySelector(".f-size")?.remove();
             card.querySelector(".f-built")?.remove();
+            card
+              .querySelector(".changelog-content")
+              ?.replaceChildren("Release notes are unavailable right now.");
           });
         }
         continue;
@@ -297,9 +453,25 @@
           }
           sizeEl?.remove();
           builtEl?.remove();
+          card
+            .querySelector(".changelog-content")
+            ?.replaceChildren("No release notes are available for this build.");
           return;
         }
 
+        const upstreamRef = getUpstreamReleaseRef(data);
+        if (data.upstream_release) {
+          updateChangelog(card, data, data.upstream_release);
+        } else if (!manifestProvidesReleases) {
+          updateChangelog(card, data, null);
+          getUpstreamChangelog(upstreamRef)
+            .then((upstreamRelease) =>
+              updateChangelog(card, data, upstreamRelease),
+            )
+            .catch(() => updateChangelog(card, data, null));
+        } else {
+          updateChangelog(card, data, null);
+        }
         sizeEl.textContent = formatBytes(asset.size);
         sizeEl.classList.remove("skel");
         dlBtn.href = asset.browser_download_url;
@@ -346,20 +518,11 @@
   // --- Refresh Button Handler ---
   const refreshBtn = document.getElementById("refresh-releases");
   if (refreshBtn) {
-    const originalHTML = refreshBtn.innerHTML;
     refreshBtn.addEventListener("click", () => {
       // Show spinner
       refreshBtn.innerHTML =
         '<svg style="animation: spin 1s linear infinite; display: inline-block;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 6v6l4 2"></path></svg>';
       refreshBtn.style.pointerEvents = "none";
-
-      // Clear all release caches
-      for (let i = sessionStorage.length - 1; i >= 0; i--) {
-        const key = sessionStorage.key(i);
-        if (key && key.startsWith("releases_")) {
-          sessionStorage.removeItem(key);
-        }
-      }
 
       // Reload page to fetch fresh data
       setTimeout(() => {
@@ -375,6 +538,21 @@
     const repo = row.dataset.repo;
     const versionEl = document.getElementById("ytdlnis-version");
     const linkEl = document.getElementById("ytdlnis-link");
+
+    try {
+      const manifest = await getLocalManifest();
+      const data = manifest?.ytdlnis;
+      if (data) {
+        const asset = (data.assets || []).find((a) =>
+          a.name.toLowerCase().endsWith(".apk"),
+        );
+        if (asset && linkEl) linkEl.href = asset.browser_download_url;
+        if (data.tag_name && versionEl) {
+          versionEl.textContent = ` (${data.tag_name.replace(/^v/, "v")})`;
+        }
+        return;
+      }
+    } catch (e) {}
 
     try {
       const res = await fetch(
@@ -403,31 +581,3 @@ if (!document.getElementById("spinner-style")) {
   style.textContent = `@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`;
   document.head.appendChild(style);
 }
-
-// --- Pure Text Visitor Counter Engine ---
-(async () => {
-  const counterEl = document.getElementById("visit-count");
-  if (!counterEl) return;
-
-  const hasVisited = sessionStorage.getItem("patchpile-hit");
-  // const hasVisited = localStorage.getItem('patchpile-hit');
-  const endpoint = hasVisited ? "get" : "hit";
-
-  try {
-    const res = await fetch(
-      `https://countapi.mileshilliard.com/api/v1/${endpoint}/patchpile_live`,
-    );
-    if (res.ok) {
-      const data = await res.json();
-      if (data && typeof data.value !== "undefined") {
-        counterEl.textContent = data.value.toLocaleString() + " times";
-        sessionStorage.setItem("patchpile-hit", "true");
-        // localStorage.setItem('patchpile-hit', 'true');
-        return;
-      }
-    }
-    counterEl.textContent = "active";
-  } catch (e) {
-    counterEl.textContent = "online";
-  }
-})();
