@@ -93,6 +93,7 @@
   let rateLimitTriggered = false;
   let rateLimitResetAt = null;
   let rateLimitTimer = null;
+  let localManifest = null;
 
   function formatCountdown(ms) {
     const totalSeconds = Math.max(0, Math.ceil(ms / 1000));
@@ -165,6 +166,20 @@
         sessionStorage.removeItem(cacheKey);
       }
     }
+
+    try {
+      if (!localManifest) {
+        const manifestRes = await fetch("./assets/releases.json", {
+          cache: "no-store",
+        });
+        if (manifestRes.ok) localManifest = await manifestRes.json();
+      }
+      const manifestReleases = localManifest?.repos?.[repo];
+      if (Array.isArray(manifestReleases)) {
+        sessionStorage.setItem(cacheKey, JSON.stringify(manifestReleases));
+        return manifestReleases;
+      }
+    } catch (e) {}
 
     const token = localStorage.getItem("gh-token");
     const headers = token ? { Authorization: `token ${token}` } : {};
