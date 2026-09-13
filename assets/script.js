@@ -23,6 +23,7 @@
     "[data-repo][data-patch-source][data-asset-match]",
   );
   const upstreamChangelogCache = new Map();
+  let manifestProvidesReleases = false;
 
   document.querySelectorAll(".changelog-link").forEach((link) => {
     link.hidden = true;
@@ -179,21 +180,11 @@
   }
 
   async function getReleasesList(repo) {
-    const cacheKey = `releases_${repo}`;
-    const cached = sessionStorage.getItem(cacheKey);
-    if (cached) {
-      try {
-        return JSON.parse(cached);
-      } catch (e) {
-        sessionStorage.removeItem(cacheKey);
-      }
-    }
-
     try {
       const manifest = await getLocalManifest();
       const manifestReleases = manifest?.repos?.[repo];
       if (Array.isArray(manifestReleases)) {
-        sessionStorage.setItem(cacheKey, JSON.stringify(manifestReleases));
+        manifestProvidesReleases = true;
         return manifestReleases;
       }
     } catch (e) {}
@@ -220,7 +211,6 @@
     }
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
-    sessionStorage.setItem(cacheKey, JSON.stringify(data));
     return data;
   }
 
@@ -472,13 +462,15 @@
         const upstreamRef = getUpstreamReleaseRef(data);
         if (data.upstream_release) {
           updateChangelog(card, data, data.upstream_release);
-        } else {
+        } else if (!manifestProvidesReleases) {
           updateChangelog(card, data, null);
           getUpstreamChangelog(upstreamRef)
             .then((upstreamRelease) =>
               updateChangelog(card, data, upstreamRelease),
             )
             .catch(() => updateChangelog(card, data, null));
+        } else {
+          updateChangelog(card, data, null);
         }
         sizeEl.textContent = formatBytes(asset.size);
         sizeEl.classList.remove("skel");
@@ -526,20 +518,11 @@
   // --- Refresh Button Handler ---
   const refreshBtn = document.getElementById("refresh-releases");
   if (refreshBtn) {
-    const originalHTML = refreshBtn.innerHTML;
     refreshBtn.addEventListener("click", () => {
       // Show spinner
       refreshBtn.innerHTML =
         '<svg style="animation: spin 1s linear infinite; display: inline-block;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 6v6l4 2"></path></svg>';
       refreshBtn.style.pointerEvents = "none";
-
-      // Clear all release caches
-      for (let i = sessionStorage.length - 1; i >= 0; i--) {
-        const key = sessionStorage.key(i);
-        if (key && key.startsWith("releases_")) {
-          sessionStorage.removeItem(key);
-        }
-      }
 
       // Reload page to fetch fresh data
       setTimeout(() => {
