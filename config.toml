@@ -37,7 +37,7 @@ version = "exp"
 [YouTube-Stable]
 apkmirror-dlurl = "https://www.apkmirror.com/apk/google-inc/youtube"
 arch = "arm64-v8a"
-patcher-args = "-e 'Change header' -Ocustom=icons/Music/header -e 'Custom branding' -OcustomName='YT Music' -e 'Custom branding' -OcustomIcon=icons/Music/branding -e 'Custom branding' -OappIcon=icons/Music/branding/mipmap-xxhdpi/morphe_adaptive_foreground_custom.png"
+patcher-args = "-e 'Change header' -Ocustom=icons/YouTube/header -e 'Custom branding' -OcustomName='YouTube' -e 'Custom branding' -OcustomIcon=icons/YouTube/branding -e 'Custom branding' -OappIcon=icons/YouTube/branding/mipmap-xxhdpi/morphe_adaptive_foreground_custom.png"
 
 [YouTube-Stable.patches]
 "github:MorpheApp/morphe-patches" = []
