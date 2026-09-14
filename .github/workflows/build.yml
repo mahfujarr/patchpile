@@ -1,4 +1,5 @@
 name: Build APKs
+
 on:
   workflow_dispatch:
     inputs:
@@ -11,12 +12,14 @@ on:
           - morphe
           - morphe-dev
           - piko
+          - piko-dev
           - rushi
           - hoo-dles
           - hooman
           - paresh
           - de-vanced
           - tiktok
+
   workflow_call:
     inputs:
       patch_source:
@@ -34,10 +37,12 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
       version: ${{ steps.version.outputs.version }}
       prerelease: ${{ steps.set-matrix.outputs.prerelease }}
+
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -62,10 +67,15 @@ jobs:
         run: |
           VER="$(date +%y.%m.%d)-${{ inputs.patch_source }}"
           echo "version=${VER}" >> "$GITHUB_OUTPUT"
+
           if gh release view "$VER" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             gh release edit "$VER" --draft --repo "$GITHUB_REPOSITORY"
           else
-            gh release create "$VER" --draft --title "$VER" --notes "" --repo "$GITHUB_REPOSITORY"
+            gh release create "$VER" \
+              --draft \
+              --title "$VER" \
+              --notes "" \
+              --repo "$GITHUB_REPOSITORY"
           fi
 
       - name: Set matrix based on patch source
@@ -83,6 +93,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.prepare.outputs.matrix) }}
@@ -129,11 +140,15 @@ jobs:
         run: |
           shopt -s nullglob
           apks=(./build/*.apk)
+
           if [[ ${#apks[@]} -eq 0 ]]; then
             echo "No APKs to upload, skipping"
             exit 0
           fi
-          gh release upload "$TAG" "${apks[@]}" --clobber --repo "$GITHUB_REPOSITORY"
+
+          gh release upload "$TAG" "${apks[@]}" \
+            --clobber \
+            --repo "$GITHUB_REPOSITORY"
 
       - name: Upload build log to draft release
         if: always()
@@ -144,8 +159,12 @@ jobs:
         run: |
           [[ -f build.md ]] || exit 0
           [[ -s build.md ]] || exit 0
+
           cp build.md "build-${LABEL}.md"
-          gh release upload "$TAG" "build-${LABEL}.md" --clobber --repo "$GITHUB_REPOSITORY"
+
+          gh release upload "$TAG" "build-${LABEL}.md" \
+            --clobber \
+            --repo "$GITHUB_REPOSITORY"
 
   release:
     needs: [prepare, run]
@@ -153,6 +172,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -176,7 +196,11 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ needs.prepare.outputs.version }}
         run: |
-          has=$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json assets --jq '[.assets[].name | select(endswith(".apk"))] | length > 0')
+          has=$(gh release view "$TAG" \
+            --repo "$GITHUB_REPOSITORY" \
+            --json assets \
+            --jq '[.assets[].name | select(endswith(".apk"))] | length > 0')
+
           echo "has_apks=${has}" >> "$GITHUB_OUTPUT"
 
       - name: Download logs from draft release
@@ -186,8 +210,17 @@ jobs:
           TAG: ${{ needs.prepare.outputs.version }}
         run: |
           mkdir -p logs
-          gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --pattern "build-*.md" --dir logs
-          gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json assets --jq '.assets[] | select(.name | startswith("build-")) | .apiUrl' | xargs -I{} gh api --method DELETE "{}"
+
+          gh release download "$TAG" \
+            --repo "$GITHUB_REPOSITORY" \
+            --pattern "build-*.md" \
+            --dir logs
+
+          gh release view "$TAG" \
+            --repo "$GITHUB_REPOSITORY" \
+            --json assets \
+            --jq '.assets[] | select(.name | startswith("build-")) | .apiUrl' |
+            xargs -I{} gh api --method DELETE "{}"
 
       - name: Combine logs and finalize release
         if: steps.check.outputs.has_apks == 'true'
@@ -196,29 +229,22 @@ jobs:
           TAG: ${{ needs.prepare.outputs.version }}
           PRERELEASE: ${{ needs.prepare.outputs.prerelease }}
         run: |
-          uv run python -m src.scripts.logs combine-logs logs | sed "s/{TAG}/$TAG/g" > final.md
-          if [ "$PRERELEASE" = "true" ]; then
-            gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --draft=false --prerelease --title "$TAG" --notes-file final.md
-          else
-            gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --draft=false --title "$TAG" --notes-file final.md
-          fi
+          uv run python -m src.scripts.logs combine-logs logs |
+            sed "s/{TAG}/$TAG/g" > final.md
 
-      - name: Generate site release manifest
-        if: steps.check.outputs.has_apks == 'true'
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          REPOSITORY: ${{ github.repository }}
-        run: |
-          uv run python -m src.scripts.site_manifest --repo "$REPOSITORY" --output assets/releases.json
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add assets/releases.json
-          if git diff --cached --quiet; then
-            echo "Release manifest is unchanged"
+          if [ "$PRERELEASE" = "true" ]; then
+            gh release edit "$TAG" \
+              --repo "$GITHUB_REPOSITORY" \
+              --draft=false \
+              --prerelease \
+              --title "$TAG" \
+              --notes-file final.md
           else
-            git commit -m "chore: update release manifest"
-            git pull --rebase origin main
-            git push
+            gh release edit "$TAG" \
+              --repo "$GITHUB_REPOSITORY" \
+              --draft=false \
+              --title "$TAG" \
+              --notes-file final.md
           fi
 
       - name: Send Telegram notification
@@ -233,4 +259,75 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ needs.prepare.outputs.version }}
-        run: gh release delete "$TAG" --repo "$GITHUB_REPOSITORY" --yes || true
+        run: |
+          gh release delete "$TAG" \
+            --repo "$GITHUB_REPOSITORY" \
+            --yes || true
+
+  update-manifest:
+    needs: [prepare, release]
+    if: ${{ needs.release.result == 'success' }}
+    runs-on: ubuntu-latest
+
+    concurrency:
+      group: patchpile-release-manifest
+      cancel-in-progress: false
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          submodules: true
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+        with:
+          python-version: "3.13"
+          enable-cache: true
+          quiet: true
+
+      - name: Install dependencies
+        run: uv sync --frozen
+
+      - name: Check if any APKs were uploaded
+        id: check
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ needs.prepare.outputs.version }}"
+
+          has=$(gh release view "$TAG" \
+            --repo "$GITHUB_REPOSITORY" \
+            --json assets \
+            --jq '[.assets[].name | select(endswith(".apk"))] | length > 0')
+
+          echo "has_apks=${has}" >> "$GITHUB_OUTPUT"
+
+      - name: Generate and push release manifest
+        if: steps.check.outputs.has_apks == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git pull --ff-only origin main
+
+          uv run python -m src.scripts.site_manifest \
+            --repo "$REPOSITORY" \
+            --output assets/releases.json
+
+          git add assets/releases.json
+
+          if git diff --cached --quiet; then
+            echo "Release manifest is unchanged"
+            exit 0
+          fi
+
+          git commit -m "chore: update release manifest"
+          git push origin HEAD:main
