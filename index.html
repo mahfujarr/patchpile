@@ -26,9 +26,9 @@
       document.documentElement.setAttribute('data-theme', theme);
     })();
   </script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="icon" type="image/svg+xml" href="./assets/favicon.svg">
   <link rel="apple-touch-icon" href="./assets/favicon.svg">
-  <script data-goatcounter="https://mahfu.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
   <link rel="stylesheet" href="./assets/style.css">
 </head>
 
@@ -506,6 +506,10 @@
           Mahfujar Rahman</a>
       </span>
       <div class="foot-links" style="display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
+        <span style="font-size: 13px; color: var(--text-faint);">
+          Total visited: <b id="visit-count"
+            style="font-family: var(--mono); color: var(--text-dim); font-weight: 600;"></b>
+        </span>
         <a href="https://github.com/mahfujarr/patchpile/releases" target="_blank" rel="noopener">All releases</a>
         <a href="https://t.me/+9WZNgGgQuZ8zY2I1" rel="noopener">Telegram</a>
       </div>
@@ -513,6 +517,12 @@
 
   </main>
 
+  <script>
+    const supabaseClient = window.supabase.createClient(
+      "https://anikploodichlpgfymiq.supabase.co",
+      "sb_publishable_r6Q5fgqVFu9TkH21jtmGjw_9MRXOYz8"
+    );
+  </script>
   <script src="./assets/script.js"></script>
 
 </body>

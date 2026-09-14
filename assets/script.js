@@ -511,3 +511,35 @@ if (!document.getElementById("spinner-style")) {
   style.textContent = `@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`;
   document.head.appendChild(style);
 }
+
+// --- Supabase Visitor Counter ---
+(async () => {
+  const counterEl = document.getElementById("visit-count");
+  if (!counterEl) return;
+
+  const hasVisited = sessionStorage.getItem("patchpile-hit");
+
+  try {
+    let count;
+
+    if (hasVisited) {
+      const { data, error } = await supabaseClient.rpc("get_views");
+
+      if (error) throw error;
+
+      count = data;
+    } else {
+      const { data, error } = await supabaseClient.rpc("increment_views");
+
+      if (error) throw error;
+
+      count = data;
+      sessionStorage.setItem("patchpile-hit", "true");
+    }
+
+    counterEl.textContent = Number(count).toLocaleString() + " times";
+  } catch (e) {
+    console.error("Visitor counter error:", e);
+    counterEl.textContent = "online";
+  }
+})();
