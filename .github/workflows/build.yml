@@ -217,7 +217,7 @@ jobs:
             echo "Release manifest is unchanged"
           else
             git commit -m "chore: update release manifest"
-            git pull
+            git pull --rebase origin main
             git push
           fi
 
