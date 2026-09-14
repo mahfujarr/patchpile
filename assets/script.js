@@ -469,16 +469,14 @@
   // --- Refresh Button Handler ---
   const refreshBtn = document.getElementById("refresh-releases");
   if (refreshBtn) {
-    refreshBtn.addEventListener("click", () => {
-      // Show spinner
+    refreshBtn.addEventListener("click", async () => {
       refreshBtn.innerHTML =
         '<svg style="animation: spin 1s linear infinite; display: inline-block;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 6v6l4 2"></path></svg>';
       refreshBtn.style.pointerEvents = "none";
-
-      // Reload page to fetch fresh data
+      localManifest = null;
       setTimeout(() => {
         location.reload();
-      }, 300);
+      }, 500);
     });
   }
 
