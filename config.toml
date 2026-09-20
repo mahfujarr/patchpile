@@ -82,14 +82,3 @@ patcher-args = "-e 'Enable DCIM folders backup control'"
 
 [GPhotos.patches]
 "github:RookieEnough/De-Vanced" = []
-
-[Brave]
-enabled = true
-brand = "dh6k"
-apkmirror-dlurl = "https://www.apkmirror.com/apk/brave-software/brave-browser/"
-version = "latest"
-arch = "arm64-v8a"
-
-[Brave.patches]
-"github:dh6k/morphe-patches" = { version = "dev" }
-
