@@ -82,3 +82,13 @@ patcher-args = "-e 'Enable DCIM folders backup control'"
 
 [GPhotos.patches]
 "github:RookieEnough/De-Vanced" = []
+
+[Facebook]
+enabled = true
+brand = "hush"
+apkmirror-dlurl = "https://www.apkmirror.com/apk/facebook-2/facebook/"
+version = "dev"
+arch = "arm64-v8a"
+
+[Facebook.patches]
+"github:"SysAdminDoc/Hushfacebook" = []
