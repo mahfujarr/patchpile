@@ -91,4 +91,4 @@ version = "dev"
 arch = "arm64-v8a"
 
 [Facebook.patches]
-"github:"SysAdminDoc/Hushfacebook" = []
+"github:SysAdminDoc/Hushfacebook" = []
