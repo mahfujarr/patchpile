@@ -247,23 +247,6 @@ jobs:
               --notes-file final.md
           fi
 
-      - name: Send Telegram notification
-        if: steps.check.outputs.has_apks == 'true' && env.TG_TOKEN != '' && env.TG_CHAT != ''
-        env:
-          TG_TOKEN: ${{ secrets.TG_TOKEN }}
-          TG_CHAT: ${{ secrets.TG_CHAT }}
-        run: uv run python -m src.scripts.telegram notify '${{ inputs.patch_source }}'
-
-      - name: Send Web Push notifications
-        if: steps.check.outputs.has_apks == 'true'
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL || 'https://anikploodichlpgfymiq.supabase.co' }}
-          SUPABASE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY || secrets.SUPABASE_KEY || 'sb_publishable_r6Q5fgqVFu9TkH21jtmGjw_9MRXOYz8' }}
-          VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
-          VAPID_PUBLIC_KEY: ${{ secrets.VAPID_PUBLIC_KEY || 'BKHQ6jfcI8aUOUHR10SH2DmKDTEz9kX9thkdzR-8ZEY462f8LMutAfe9XLcxMnFye4rCS1tZ0i3Gnx1oNy-tjmE' }}
-          VAPID_CLAIMS_EMAIL: ${{ secrets.VAPID_CLAIMS_EMAIL || 'mailto:admin@patchpile.app' }}
-        run: uv run --with pywebpush python -m src.scripts.push_notify notify '${{ inputs.patch_source }}'
-
       - name: Delete empty draft if no APKs
         if: steps.check.outputs.has_apks != 'true'
         env:
@@ -336,8 +319,35 @@ jobs:
 
           if git diff --cached --quiet; then
             echo "Release manifest is unchanged"
-            exit 0
+          else
+            git commit -m "chore: update release manifest"
+            git push origin HEAD:main
           fi
 
-          git commit -m "chore: update release manifest"
-          git push origin HEAD:main
+      - name: Fetch release notes for notifications
+        if: steps.check.outputs.has_apks == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ needs.prepare.outputs.version }}
+        run: |
+          gh release view "$TAG" \
+            --repo "$GITHUB_REPOSITORY" \
+            --json body \
+            --jq .body > final.md
+
+      - name: Send Telegram notification
+        if: steps.check.outputs.has_apks == 'true'
+        env:
+          TG_TOKEN: ${{ secrets.TG_TOKEN }}
+          TG_CHAT: ${{ secrets.TG_CHAT }}
+        run: uv run python -m src.scripts.telegram notify '${{ inputs.patch_source }}'
+
+      - name: Send Web Push notifications
+        if: steps.check.outputs.has_apks == 'true'
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL || 'https://anikploodichlpgfymiq.supabase.co' }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY || secrets.SUPABASE_KEY || 'sb_publishable_r6Q5fgqVFu9TkH21jtmGjw_9MRXOYz8' }}
+          VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
+          VAPID_PUBLIC_KEY: ${{ secrets.VAPID_PUBLIC_KEY || 'BKHQ6jfcI8aUOUHR10SH2DmKDTEz9kX9thkdzR-8ZEY462f8LMutAfe9XLcxMnFye4rCS1tZ0i3Gnx1oNy-tjmE' }}
+          VAPID_CLAIMS_EMAIL: ${{ secrets.VAPID_CLAIMS_EMAIL || 'mailto:admin@patchpile.app' }}
+        run: uv run --with pywebpush python -m src.scripts.push_notify notify '${{ inputs.patch_source }}'
