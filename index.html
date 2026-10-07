@@ -42,6 +42,15 @@
             releases</span></span>
       </div>
       <div class="header-right">
+        <button class="notif-btn" id="notif-toggle" type="button" aria-label="Toggle release notifications"
+          title="Turn on release notifications">
+          <svg class="icon-bell" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+          </svg>
+          <span class="notif-dot" id="notif-status-dot" aria-hidden="true"></span>
+        </button>
         <button class="theme-toggle" id="refresh-releases" type="button" aria-label="Refresh all release links"
           title="Check for new builds">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
@@ -96,33 +105,28 @@
     <details class="whats-new" id="whats-new-section" aria-label="What's new in latest release">
       <summary class="whats-new-summary">
         <div class="whats-new-summary-left">
-          <div class="whats-new-badge">
-            <span class="live-dot" aria-hidden="true"></span>
-            <span>WHAT'S NEW</span>
-          </div>
-          <div class="whats-new-summary-title">
-            <!-- <h2 class="whats-new-heading" id="whats-new-title">Latest Workflow Run</h2> -->
-            <span class="whats-new-summary-preview" id="wn-summary-preview"></span>
-          </div>
-        </div>
-        <div class="whats-new-summary-right">
-          <span class="whats-new-tag" id="wn-release-tag">Checking builds…</span>
+          <span class="live-dot" aria-hidden="true"></span>
+          <span class="whats-new-brand" id="wn-summary-brand">Checking builds…</span>
+          <span class="whats-new-sep" id="wn-summary-sep" aria-hidden="true" hidden>·</span>
           <span class="whats-new-time" id="wn-release-time"></span>
-          <span class="whats-new-toggle-icon" aria-hidden="true"></span>
         </div>
+        <span class="whats-new-toggle-icon" aria-hidden="true"></span>
       </summary>
 
       <div class="whats-new-body">
         <div class="whats-new-toolbar">
           <div class="whats-new-runs" id="wn-runs-bar" role="tablist" aria-label="Recent workflow runs"></div>
-          <a class="whats-new-gh-link" id="wn-release-link" href="https://github.com/mahfujarr/patchpile/releases"
-            target="_blank" rel="noopener" title="View release on GitHub">
-            <span>GitHub release</span>
-            <svg viewBox="0 0 16 16" fill="currentColor" width="12" height="12">
-              <path
-                d="M3.75 2h8.5a.75.75 0 0 1 .75.75v8.5a.75.75 0 0 1-1.5 0V4.56L2.53 13.53a.75.75 0 0 1-1.06-1.06L10.44 3.5H3.75a.75.75 0 0 1 0-1.5Z" />
-            </svg>
-          </a>
+          <div class="whats-new-toolbar-right">
+            <span class="whats-new-tag" id="wn-release-tag"></span>
+            <a class="whats-new-gh-link" id="wn-release-link" href="https://github.com/mahfujarr/patchpile/releases"
+              target="_blank" rel="noopener" title="View release on GitHub">
+              <span>GitHub release</span>
+              <svg viewBox="0 0 16 16" fill="currentColor" width="12" height="12">
+                <path
+                  d="M3.75 2h8.5a.75.75 0 0 1 .75.75v8.5a.75.75 0 0 1-1.5 0V4.56L2.53 13.53a.75.75 0 0 1-1.06-1.06L10.44 3.5H3.75a.75.75 0 0 1 0-1.5Z" />
+              </svg>
+            </a>
+          </div>
         </div>
 
         <div class="whats-new-apps-card">
@@ -580,8 +584,8 @@
       "sb_publishable_r6Q5fgqVFu9TkH21jtmGjw_9MRXOYz8"
     );
   </script>
+  <div id="notif-toast" class="toast-msg" role="status" aria-live="polite"></div>
   <script src="./assets/script.js"></script>
-
 </body>
 
 </html>

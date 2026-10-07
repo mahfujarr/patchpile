@@ -129,6 +129,36 @@
     return ` ${timePart}, ${datePart}`;
   }
 
+  function formatShortTime(iso) {
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return "";
+    const diff = Math.max(0, Date.now() - d.getTime());
+    const mins = Math.floor(diff / 60000);
+    if (mins < 60) return `${Math.max(1, mins)}m ago`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return `${hours}h ago`;
+    const days = Math.floor(hours / 24);
+    if (days < 30) return `${days}d ago`;
+    return d.toLocaleDateString("en-GB", { day: "2-digit", month: "short" });
+  }
+
+  function formatHoursAgo(iso) {
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return "";
+    const diffMs = Math.max(0, Date.now() - d.getTime());
+    const diffMins = Math.floor(diffMs / 60000);
+    if (diffMins < 1) return "just now";
+    if (diffMins < 60) {
+      return diffMins === 1 ? "1 minute ago" : `${diffMins} minutes ago`;
+    }
+    const hours = Math.floor(diffMins / 60);
+    if (hours === 1) return "1 hour ago";
+    if (hours < 48) return `${hours} hours ago`;
+    const days = Math.floor(hours / 24);
+    if (days === 1) return "yesterday";
+    return `${days} days ago`;
+  }
+
   let rateLimitRemaining = null;
   let rateLimitTriggered = false;
   let rateLimitResetAt = null;
@@ -449,6 +479,31 @@
     return apps;
   }
 
+  function getReleaseBrand(rel) {
+    if (!rel) return "Build";
+    const tag = rel.tag_name || "";
+    const match = tag.match(/^\d+[\d.]*-(.+)$/);
+    const raw = match ? match[1].toLowerCase() : tag.toLowerCase();
+    const brandMap = {
+      "morphe": "Morphe",
+      "morphe-dev": "Morphe-dev",
+      "piko": "Piko",
+      "piko-dev": "Piko-dev",
+      "devanced": "De-vanced",
+      "de-vanced": "De-vanced",
+      "rushi": "Rushi",
+      "hoo-dles": "Hoo-dles",
+      "hooman": "Hooman",
+      "paresh": "Paresh",
+      "tiktok": "TikTok",
+    };
+    if (brandMap[raw]) return brandMap[raw];
+    return raw
+      .split("-")
+      .map((s) => s.charAt(0).toUpperCase() + s.slice(1))
+      .join("-");
+  }
+
   function setupWhatsNew(releases) {
     const section = document.getElementById("whats-new-section");
     if (!section || !Array.isArray(releases) || releases.length === 0) return;
@@ -461,6 +516,8 @@
 
     const recentRuns = sorted.slice(0, 5);
     const runsBar = document.getElementById("wn-runs-bar");
+    const brandEl = document.getElementById("wn-summary-brand");
+    const sepEl = document.getElementById("wn-summary-sep");
     const tagEl = document.getElementById("wn-release-tag");
     const timeEl = document.getElementById("wn-release-time");
     const linkEl = document.getElementById("wn-release-link");
@@ -473,11 +530,17 @@
     function renderRelease(rel, isLatest) {
       if (!rel) return;
 
+      if (brandEl) {
+        brandEl.textContent = getReleaseBrand(rel);
+      }
       if (tagEl) {
         tagEl.textContent = rel.tag_name;
       }
       if (timeEl) {
-        timeEl.textContent = formatBuiltAt(rel.published_at || rel.created_at);
+        const timeStr = formatHoursAgo(rel.published_at || rel.created_at);
+        timeEl.textContent = timeStr;
+        timeEl.title = formatBuiltAt(rel.published_at || rel.created_at).trim();
+        if (sepEl) sepEl.hidden = !timeStr;
       }
       if (linkEl) {
         linkEl.href =
@@ -487,13 +550,6 @@
 
       // Changed apps
       const apps = parseChangedApps(rel);
-      const previewEl = document.getElementById("wn-summary-preview");
-      if (previewEl) {
-        const previewNames = apps
-          .map((a) => `${a.name}${a.version ? ` v${a.version}` : ""}`)
-          .join(", ");
-        previewEl.textContent = previewNames ? `· ${previewNames}` : "";
-      }
 
       appsListEl.replaceChildren();
 
@@ -627,18 +683,6 @@
         pill.setAttribute("role", "tab");
         pill.setAttribute("aria-selected", String(index === 0));
 
-        const apps = parseChangedApps(rel);
-        const appNames = [
-          ...new Set(
-            apps.map((a) =>
-              a.name
-                .replace(/ (Experimental|Stable)/i, "")
-                .replace(/\(.*\)/, "")
-                .trim(),
-            ),
-          ),
-        ].join(", ");
-
         if (index === 0) {
           pill.innerHTML = `<span class="live-dot" style="width:5px;height:5px;"></span> Latest: ${rel.tag_name}`;
         } else {
@@ -657,6 +701,48 @@
 
         runsBar.append(pill);
       });
+
+      // Enable smooth drag-to-scroll on runsBar
+      let isPointerDown = false;
+      let startX = 0;
+      let scrollLeft = 0;
+      let hasDragged = false;
+
+      runsBar.addEventListener("pointerdown", (e) => {
+        if (e.pointerType === "mouse" && e.button !== 0) return;
+        isPointerDown = true;
+        hasDragged = false;
+        startX = e.clientX;
+        scrollLeft = runsBar.scrollLeft;
+      });
+
+      window.addEventListener("pointermove", (e) => {
+        if (!isPointerDown) return;
+        const dx = e.clientX - startX;
+        if (Math.abs(dx) > 4) {
+          hasDragged = true;
+          runsBar.scrollLeft = scrollLeft - dx;
+        }
+      });
+
+      const endPointer = () => {
+        isPointerDown = false;
+      };
+      window.addEventListener("pointerup", endPointer);
+      window.addEventListener("pointercancel", endPointer);
+
+      // Prevent accidental pill activation when dragging/swiping
+      runsBar.addEventListener(
+        "click",
+        (e) => {
+          if (hasDragged) {
+            e.preventDefault();
+            e.stopPropagation();
+            hasDragged = false;
+          }
+        },
+        true,
+      );
     }
 
     if (expandBtn && changelogContentEl) {
@@ -888,5 +974,234 @@ if (!document.getElementById("spinner-style")) {
   } catch (e) {
     console.error("Visitor counter error:", e);
     counterEl.textContent = "online";
+  }
+})();
+
+// --- Web Push Notifications Manager ---
+(function () {
+  const VAPID_PUBLIC_KEY =
+    "BKHQ6jfcI8aUOUHR10SH2DmKDTEz9kX9thkdzR-8ZEY462f8LMutAfe9XLcxMnFye4rCS1tZ0i3Gnx1oNy-tjmE";
+
+  let toastTimer = null;
+  function showToast(message, duration = 4500) {
+    const toast = document.getElementById("notif-toast");
+    if (!toast) return;
+    toast.textContent = message;
+    toast.classList.add("show");
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => {
+      toast.classList.remove("show");
+    }, duration);
+  }
+
+  function urlBase64ToUint8Array(base64String) {
+    const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+    const base64 = (base64String + padding)
+      .replace(/-/g, "+")
+      .replace(/_/g, "/");
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+    for (let i = 0; i < rawData.length; ++i) {
+      outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
+  }
+
+  const notifToggle = document.getElementById("notif-toggle");
+
+  const isSupported =
+    "serviceWorker" in navigator &&
+    "PushManager" in window &&
+    "Notification" in window;
+
+  function updateUiState(state) {
+    if (state === "active") {
+      notifToggle?.classList.add("active");
+      notifToggle?.classList.remove("denied");
+      notifToggle?.setAttribute(
+        "title",
+        "Release notifications active (click to turn off)",
+      );
+    } else if (state === "denied") {
+      notifToggle?.classList.remove("active");
+      notifToggle?.classList.add("denied");
+      notifToggle?.setAttribute(
+        "title",
+        "Notifications blocked in browser settings",
+      );
+    } else {
+      notifToggle?.classList.remove("active", "denied");
+      notifToggle?.setAttribute(
+        "title",
+        "Turn on instant release notifications",
+      );
+    }
+  }
+
+  // Initial passive status check - NEVER request permission on load
+  if (!isSupported) {
+    updateUiState("unsupported");
+  } else if (Notification.permission === "denied") {
+    updateUiState("denied");
+  } else if (Notification.permission === "granted") {
+    navigator.serviceWorker.getRegistration().then((reg) => {
+      if (!reg) {
+        updateUiState("inactive");
+        return;
+      }
+      reg.pushManager.getSubscription().then((sub) => {
+        if (sub) {
+          updateUiState("active");
+        } else {
+          updateUiState("inactive");
+        }
+      });
+    });
+  } else {
+    // Permission is "default" -> keep idle/inactive. DO NOT prompt.
+    updateUiState("inactive");
+  }
+
+  async function handleToggleClick() {
+    if (!isSupported) {
+      if (/iPhone|iPad|iPod/.test(navigator.userAgent)) {
+        showToast(
+          "On iOS, tap Share → 'Add to Home Screen' first to enable push notifications.",
+        );
+      } else {
+        showToast("Push notifications are not supported in this browser.");
+      }
+      return;
+    }
+
+    if (Notification.permission === "denied") {
+      showToast(
+        "⚠️ Notifications are blocked. Please allow notifications in site permissions to receive build alerts.",
+      );
+      updateUiState("denied");
+      return;
+    }
+
+    // Check if an existing subscription is active
+    let reg;
+    try {
+      reg = await navigator.serviceWorker.getRegistration();
+    } catch (e) {
+      reg = null;
+    }
+
+    let currentSub = null;
+    if (reg) {
+      try {
+        currentSub = await reg.pushManager.getSubscription();
+      } catch (e) {
+        currentSub = null;
+      }
+    }
+
+    if (currentSub) {
+      // User deliberately clicked to turn notifications OFF
+      try {
+        const subJson = currentSub.toJSON();
+        await currentSub.unsubscribe();
+        localStorage.setItem("patchpile-notif-enabled", "false");
+        updateUiState("inactive");
+        showToast("🔕 Release notifications turned off.");
+
+        // Remove from Supabase
+        if (window.supabaseClient && subJson.endpoint) {
+          supabaseClient
+            .from("push_subscriptions")
+            .delete()
+            .eq("endpoint", subJson.endpoint)
+            .then(() => {})
+            .catch(() => {});
+        }
+      } catch (e) {
+        console.error("Error unsubscribing:", e);
+        showToast("Could not unsubscribe: " + e.message);
+      }
+      return;
+    }
+
+    // User deliberately clicked to turn notifications ON -> Request permission now!
+    try {
+      const permission = await Notification.requestPermission();
+      if (permission !== "granted") {
+        if (permission === "denied") {
+          updateUiState("denied");
+          showToast(
+            "Notifications blocked. You can re-enable them in browser settings.",
+          );
+        } else {
+          updateUiState("inactive");
+        }
+        return;
+      }
+
+      // Permission granted! Register SW if not already registered
+      if (!reg) {
+        reg = await navigator.serviceWorker.register("./sw.js");
+      }
+      await navigator.serviceWorker.ready;
+
+      // Subscribe to Web Push
+      const newSub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+      });
+
+      const subJson = newSub.toJSON();
+      localStorage.setItem("patchpile-notif-enabled", "true");
+      updateUiState("active");
+      showToast(
+        "🔔 Notifications enabled! You'll be notified instantly when new builds are published.",
+      );
+
+      // Instant device confirmation notification
+      try {
+        reg.showNotification("🔔 Patchpile Notifications Active", {
+          body: "Instant alerts are ready! You'll be notified when new APK builds are published.",
+          icon: "./assets/favicon.svg",
+          badge: "./assets/favicon.svg",
+          tag: "patchpile-welcome",
+        });
+      } catch (e) {}
+
+      // Sync subscription to Supabase
+      if (window.supabaseClient && subJson.endpoint) {
+        const payload = {
+          endpoint: subJson.endpoint,
+          p256dh: subJson.keys?.p256dh || "",
+          auth: subJson.keys?.auth || "",
+          user_agent: (navigator.userAgent || "").slice(0, 200),
+          updated_at: new Date().toISOString(),
+        };
+
+        const { error } = await supabaseClient
+          .from("push_subscriptions")
+          .upsert(payload, { onConflict: "endpoint" });
+
+        if (error) {
+          console.warn(
+            "Supabase push subscription sync notice:",
+            error.message,
+          );
+          if (error.code === "PGRST205") {
+            console.info(
+              "To store subscriptions in Supabase, execute 'supabase_push_subscriptions.sql' in Supabase SQL editor.",
+            );
+          }
+        }
+      }
+    } catch (err) {
+      console.error("Failed to enable push notifications:", err);
+      showToast("Could not enable notifications: " + err.message);
+      updateUiState("inactive");
+    }
+  }
+
+  if (notifToggle) {
+    notifToggle.addEventListener("click", handleToggleClick);
   }
 })();

@@ -5,6 +5,7 @@ on:
     branches: ["main"]
     paths:
       - "index.html"
+      - "sw.js"
       - "assets/script.js"
       - "assets/style.css"
       - "assets/favicon.svg"
