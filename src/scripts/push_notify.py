@@ -20,47 +20,209 @@ _BACKTICK_RE = re.compile(r"`([^`]+)`")
 
 DEFAULT_SUPABASE_URL = "https://anikploodichlpgfymiq.supabase.co"
 DEFAULT_SUPABASE_KEY = "sb_publishable_r6Q5fgqVFu9TkH21jtmGjw_9MRXOYz8"
-DEFAULT_VAPID_PUBLIC_KEY = (
-    "BKHQ6jfcI8aUOUHR10SH2DmKDTEz9kX9thkdzR-8ZEY462f8LMutAfe9XLcxMnFye4rCS1tZ0i3Gnx1oNy-tjmE"
-)
+DEFAULT_VAPID_PUBLIC_KEY = "BKHQ6jfcI8aUOUHR10SH2DmKDTEz9kX9thkdzR-8ZEY462f8LMutAfe9XLcxMnFye4rCS1tZ0i3Gnx1oNy-tjmE"
 DEFAULT_VAPID_PRIVATE_KEY = "qUNcnHcAYe7H80Kdr-yh68e3dIFABfv-PUV0MfIINMQ"
 DEFAULT_CLAIMS_EMAIL = "mailto:admin@patchpile.app"
 SITE_URL = "https://mahfujarr.me/patchpile/"
 
 
-def _parse_final_md(final_md: Path) -> list[str]:
-    green_lines: list[str] = []
-    if not final_md.exists() or not final_md.stat().st_size:
-        return green_lines
-    for line in final_md.read_text(encoding="utf-8").splitlines():
-        stripped = line.strip()
-        if stripped.startswith("- 🟢"):
-            cleaned = _BACKTICK_RE.sub(r"\1", stripped.removeprefix("- "))
-            green_lines.append(cleaned)
-    return green_lines
+def _clean_app_name(raw: str) -> str:
+    cleaned = raw.strip()
+    # Normalize abbreviations and hyphenation while preserving tags like Experimental / Stable
+    cleaned = cleaned.replace("YT-Music", "YT Music").replace("Google-Photos", "Google Photos")
+    if cleaned.startswith("GPhotos"):
+        cleaned = cleaned.replace("GPhotos", "Google Photos", 1)
+    return cleaned
 
 
-def _build_payload(brand: str, green_lines: list[str]) -> dict:
-    app_names = []
-    for line in green_lines:
-        m = re.search(r"»\s*([^:(]+)", line)
-        if m:
-            app_names.append(m.group(1).strip())
+def _parse_apps(text: str) -> list[dict]:
+    apps: list[dict] = []
+    seen = set()
+    for line in text.splitlines():
+        if "🟢" not in line:
+            continue
+        m = re.search(
+            r"»\s*([^:(]+)(?:\s*\(([^)]+)\))?(?::\s*\[`?([^`\]]+)`?\](?:\((https?://[^\s)]+)\))?)?",
+            line,
+        )
+        if not m:
+            continue
+        raw_name = m.group(1).strip()
+        app_name = _clean_app_name(raw_name)
+        ver = m.group(3).replace("`", "").strip() if m.group(3) else ""
+        dl_url = m.group(4).strip() if m.group(4) else ""
+        if app_name not in seen:
+            seen.add(app_name)
+            apps.append({"name": app_name, "version": ver, "dl_url": dl_url})
+    return apps
 
-    if app_names:
-        body = f"Updated: {', '.join(app_names)}. Tap to download."
+
+def _lookup_apps_from_manifest(target: str) -> tuple[list[dict], str]:
+    manifest_path = Path("assets/releases.json")
+    if not manifest_path.exists():
+        return [], ""
+    try:
+        data = json.loads(manifest_path.read_text(encoding="utf-8"))
+        all_releases = [
+            r for sublist in data.get("repos", {}).values() for r in sublist
+        ]
+        norm = target.lower().strip()
+        matching = [
+            r
+            for r in all_releases
+            if r.get("tag_name", "").lower().endswith(f"-{norm}")
+        ]
+        if not matching:
+            matching = [
+                r
+                for r in all_releases
+                if norm in r.get("tag_name", "").lower()
+            ]
+        if matching:
+            matching.sort(
+                key=lambda r: r.get("published_at") or r.get("created_at") or "",
+                reverse=True,
+            )
+            rel = matching[0]
+            tag = rel.get("tag_name", "")
+            body = rel.get("body", "")
+            apps = _parse_apps(body)
+
+            # Match any missing dl_url from assets
+            assets = rel.get("assets", [])
+            for app in apps:
+                if not app.get("dl_url"):
+                    for a in assets:
+                        aname = a.get("name", "").lower()
+                        n_clean = app["name"].lower().replace(" ", "-")
+                        if n_clean in aname and aname.endswith(".apk"):
+                            app["dl_url"] = a.get("browser_download_url", "")
+                            break
+
+            if not apps and assets:
+                for a in assets:
+                    aname = a.get("name", "")
+                    if aname.endswith(".apk"):
+                        app_name = _clean_app_name(aname.split("-")[0].capitalize())
+                        apps.append({
+                            "name": app_name,
+                            "version": "",
+                            "dl_url": a.get("browser_download_url", ""),
+                        })
+
+            return apps, tag
+    except Exception as e:
+        epr(f"Error inspecting manifest for app names: {e}")
+    return [], ""
+
+
+def _format_app_list(names: list[str]) -> str:
+    if not names:
+        return "App"
+    if len(names) == 1:
+        return names[0]
+    if len(names) == 2:
+        return f"{names[0]} & {names[1]}"
+    return f"{names[0]}, {names[1]}"
+
+
+def _build_payload(target: str, final_md: Path | None = None) -> dict:
+    apps: list[dict] = []
+    tag_name = ""
+
+    # 1. Parse final_md if available
+    if final_md and final_md.exists() and final_md.stat().st_size:
+        apps = _parse_apps(final_md.read_text(encoding="utf-8"))
+
+    # 2. Check releases.json for matching release and tag
+    manifest_apps, manifest_tag = _lookup_apps_from_manifest(target)
+    if not tag_name:
+        tag_name = manifest_tag
+    if not apps:
+        apps = manifest_apps
     else:
-        body = f"New {brand.capitalize()} patched APKs are ready for download!"
+        # Fill in any missing dl_urls from manifest
+        for app in apps:
+            if not app.get("dl_url"):
+                for m_app in manifest_apps:
+                    if m_app["name"].lower() == app["name"].lower() and m_app.get("dl_url"):
+                        app["dl_url"] = m_app["dl_url"]
+                        break
 
-    title = f"Patchpile: New {brand.capitalize()} Build!"
+    # 3. Fallback mapping if still no apps
+    if not apps:
+        norm = target.lower().strip()
+        brand_map = {
+            "piko": "Instagram",
+            "piko-dev": "Instagram Experimental",
+            "morphe": "YouTube Stable & YT Music Stable",
+            "morphe-dev": "YT Music Experimental & YouTube Experimental",
+            "devanced": "Google Photos",
+            "de-vanced": "Google Photos",
+            "rushi": "Google Photos",
+            "hoo-dles": "YouTube",
+            "hooman": "YouTube",
+            "paresh": "YouTube",
+            "tiktok": "TikTok",
+        }
+        known_app = brand_map.get(norm)
+        if known_app:
+            if "&" in known_app:
+                apps = [
+                    {"name": n.strip(), "version": "", "dl_url": ""}
+                    for n in known_app.split("&")
+                ]
+            else:
+                apps = [{"name": known_app, "version": "", "dl_url": ""}]
+        else:
+            apps = [{"name": _clean_app_name(target), "version": "", "dl_url": ""}]
+
+    app_names = [a["name"] for a in apps if a.get("name")]
+    primary_title_str = _format_app_list(app_names)
+    title = f"New {primary_title_str} Update"
+
+    # Format body with version if single app
+    if len(apps) == 1 and apps[0].get("version"):
+        ver = apps[0]["version"]
+        body = f"{apps[0]['name']} (v{ver}) is ready for download."
+    elif len(apps) == 1:
+        body = f"New {apps[0]['name']} build is ready for download."
+    elif len(apps) > 1:
+        body = f"Updated {primary_title_str} builds are ready for download."
+    else:
+        body = "New patched APKs are ready for download."
+
+    tag = (
+        f"patchpile-{app_names[0].lower().replace(' ', '-')}"
+        if app_names
+        else "patchpile-update"
+    )
+
+    dl_apps = [a for a in apps if a.get("dl_url")]
+    direct_url = dl_apps[0]["dl_url"] if len(dl_apps) == 1 else ""
+
+    autodl_tag = tag_name or target
+    site_autodl_url = f"{SITE_URL}?autodownload={quote(autodl_tag, safe='')}"
+
+    # For single-app updates, direct_url triggers browser download manager immediately on click
+    # For multi-app updates, site_autodl_url opens the site to download both apps
+    click_url = direct_url if direct_url else site_autodl_url
+
     return {
         "title": title,
         "body": body,
         "icon": "./assets/favicon.svg",
         "badge": "./assets/favicon.svg",
-        "tag": f"patchpile-{brand.lower()}",
+        "tag": tag,
         "data": {
-            "url": SITE_URL,
+            "url": click_url,
+            "site_url": SITE_URL,
+            "direct_url": direct_url,
+            "download_urls": [a["dl_url"] for a in dl_apps],
+            "apps": [
+                {"name": a["name"], "dl_url": a.get("dl_url", "")}
+                for a in apps
+            ],
         },
     }
 
@@ -74,7 +236,9 @@ def fetch_subscriptions(supabase_url: str, supabase_key: str) -> list[dict] | No
     with curl_requests.Session() as session:
         resp = session.get(url, headers=headers, timeout=(5, 10))
         if resp.status_code != 200:
-            epr(f"Failed to fetch subscriptions from Supabase ({resp.status_code}): {resp.text}")
+            epr(
+                f"Failed to fetch subscriptions from Supabase ({resp.status_code}): {resp.text}"
+            )
             return None
         try:
             return resp.json()
@@ -104,9 +268,9 @@ def notify(brand: str, final_md_path: str = "final.md") -> None:
     vapid_email = os.getenv("VAPID_CLAIMS_EMAIL", DEFAULT_CLAIMS_EMAIL)
 
     path = Path(final_md_path)
-    green_lines = _parse_final_md(path) if path.exists() else []
-    payload = _build_payload(brand, green_lines)
+    payload = _build_payload(brand, final_md=path)
     payload_str = json.dumps(payload)
+    pr(f"Notification: '{payload['title']}' — '{payload['body']}'")
 
     pr("Fetching push subscribers from Supabase...")
     subscriptions = fetch_subscriptions(supabase_url, supabase_key)
@@ -115,7 +279,9 @@ def notify(brand: str, final_md_path: str = "final.md") -> None:
         return
     if not subscriptions:
         pr("Supabase connected successfully, but 0 devices have subscribed yet.")
-        pr("👉 Visit the website and click the notification bell to register your device first.")
+        pr(
+            "👉 Visit the website and click the notification bell to register your device first."
+        )
         return
 
     pr(f"Found {len(subscriptions)} subscriber(s). Broadcasting Web Push...")
@@ -160,8 +326,20 @@ def notify(brand: str, final_md_path: str = "final.md") -> None:
                 epr(f"Web push error {status_code} for {endpoint[:45]}...")
                 failed += 1
         except pywebpush.WebPushException as ex:
-            if ex.response is not None and ex.response.status_code in (404, 410):
-                pr(f"Pruning expired subscription: {endpoint[:45]}...")
+            status = (
+                getattr(ex.response, "status_code", None)
+                if ex.response is not None
+                else None
+            )
+            text = getattr(ex.response, "text", "") if ex.response is not None else ""
+            if (
+                status in (404, 410)
+                or "NotRegistered" in text
+                or "InvalidRegistration" in text
+            ):
+                pr(
+                    f"Pruning dead/uninstalled subscription ({status or 'expired'}): {endpoint[:45]}..."
+                )
                 delete_subscription(supabase_url, supabase_key, endpoint)
                 expired += 1
             else:
@@ -171,7 +349,9 @@ def notify(brand: str, final_md_path: str = "final.md") -> None:
             epr(f"Failed to send to {endpoint[:45]}: {e}")
             failed += 1
 
-    pr(f"Web Push broadcast finished: {success} sent, {expired} pruned, {failed} failed.")
+    pr(
+        f"Web Push broadcast finished: {success} sent, {expired} pruned, {failed} failed."
+    )
 
 
 def main() -> None:
@@ -186,4 +366,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

@@ -17,6 +17,19 @@
   });
 })();
 
+// --- Shared Toast Utility ---
+let toastTimer = null;
+function showToast(message, duration = 4500) {
+  const toast = document.getElementById("notif-toast");
+  if (!toast) return;
+  toast.textContent = message;
+  toast.classList.add("show");
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => {
+    toast.classList.remove("show");
+  }, duration);
+}
+
 // --- Release Management and APIs ---
 (function () {
   const releaseCards = document.querySelectorAll(
@@ -935,6 +948,94 @@
       }
     } catch (e) {}
   })();
+
+  // --- Auto-Download Trigger (from Push Notification Click) ---
+  (async () => {
+    const params = new URLSearchParams(window.location.search);
+    const autodownload = params.get("autodownload");
+    const directDl = params.get("dl");
+    const appNameParam = params.get("app");
+
+    if (!autodownload && !directDl) return;
+
+    function triggerDownload(url, filename) {
+      const a = document.createElement("a");
+      a.href = url;
+      if (filename) a.setAttribute("download", filename);
+      a.setAttribute("rel", "noopener");
+      a.style.display = "none";
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => a.remove(), 2500);
+    }
+
+    function scrollToMatchingCard(name) {
+      if (!name) return;
+      const lower = name.toLowerCase();
+      const firstToken = lower.split(" ")[0];
+      const cards = document.querySelectorAll(".app");
+      for (const card of cards) {
+        if (card.textContent.toLowerCase().includes(firstToken)) {
+          card.scrollIntoView({ behavior: "smooth", block: "center" });
+          break;
+        }
+      }
+    }
+
+    // Fast path: direct download link provided in query params
+    if (directDl) {
+      const appName = appNameParam ? decodeURIComponent(appNameParam) : "APK";
+      showToast(`⬇️ Automatically downloading ${appName}...`, 5500);
+      triggerDownload(directDl);
+      scrollToMatchingCard(appName);
+
+      // Clean query string from browser URL bar without page reload
+      const cleanUrl = window.location.pathname + window.location.hash;
+      window.history.replaceState(null, "", cleanUrl);
+      return;
+    }
+
+    // Tag / Brand lookup path (e.g. multi-app or tag link)
+    try {
+      const manifest = await getLocalManifest();
+      const allReleases = manifest?.repos?.["mahfujarr/patchpile"] || [];
+      const norm = (autodownload || "").toLowerCase().trim();
+
+      const rel =
+        allReleases.find((r) => (r.tag_name || "").toLowerCase() === norm) ||
+        allReleases.find((r) =>
+          (r.tag_name || "").toLowerCase().endsWith("-" + norm),
+        ) ||
+        allReleases.find((r) =>
+          (r.tag_name || "").toLowerCase().includes(norm),
+        ) ||
+        allReleases[0];
+
+      if (!rel) return;
+
+      const changedApps = parseChangedApps(rel).filter((a) => Boolean(a.dlUrl));
+      if (changedApps.length === 0) return;
+
+      const names = changedApps.map((a) => a.name).join(" & ");
+      showToast(`⬇️ Automatically downloading ${names}...`, 6000);
+
+      changedApps.forEach((app, idx) => {
+        setTimeout(() => {
+          triggerDownload(app.dlUrl);
+        }, idx * 750);
+      });
+
+      if (changedApps[0]) {
+        scrollToMatchingCard(changedApps[0].name);
+      }
+
+      // Clean query string from browser URL bar without page reload
+      const cleanUrl = window.location.pathname + window.location.hash;
+      window.history.replaceState(null, "", cleanUrl);
+    } catch (e) {
+      console.error("[AutoDownload] Error initiating auto download:", e);
+    }
+  })();
 })();
 
 // --- Add spinner animation CSS ---
@@ -981,18 +1082,6 @@ if (!document.getElementById("spinner-style")) {
 (function () {
   const VAPID_PUBLIC_KEY =
     "BKHQ6jfcI8aUOUHR10SH2DmKDTEz9kX9thkdzR-8ZEY462f8LMutAfe9XLcxMnFye4rCS1tZ0i3Gnx1oNy-tjmE";
-
-  let toastTimer = null;
-  function showToast(message, duration = 4500) {
-    const toast = document.getElementById("notif-toast");
-    if (!toast) return;
-    toast.textContent = message;
-    toast.classList.add("show");
-    if (toastTimer) clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => {
-      toast.classList.remove("show");
-    }, duration);
-  }
 
   function urlBase64ToUint8Array(base64String) {
     const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
