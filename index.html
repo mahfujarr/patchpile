@@ -579,10 +579,12 @@
   </main>
 
   <script>
-    const supabaseClient = window.supabase.createClient(
-      "https://anikploodichlpgfymiq.supabase.co",
-      "sb_publishable_r6Q5fgqVFu9TkH21jtmGjw_9MRXOYz8"
-    );
+    window.supabaseClient = window.supabase
+      ? window.supabase.createClient(
+          "https://anikploodichlpgfymiq.supabase.co",
+          "sb_publishable_r6Q5fgqVFu9TkH21jtmGjw_9MRXOYz8"
+        )
+      : null;
   </script>
   <div id="notif-toast" class="toast-msg" role="status" aria-live="polite"></div>
   <script src="./assets/script.js"></script>

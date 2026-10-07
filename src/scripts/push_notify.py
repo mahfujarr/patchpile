@@ -23,6 +23,7 @@ DEFAULT_SUPABASE_KEY = "sb_publishable_r6Q5fgqVFu9TkH21jtmGjw_9MRXOYz8"
 DEFAULT_VAPID_PUBLIC_KEY = (
     "BKHQ6jfcI8aUOUHR10SH2DmKDTEz9kX9thkdzR-8ZEY462f8LMutAfe9XLcxMnFye4rCS1tZ0i3Gnx1oNy-tjmE"
 )
+DEFAULT_VAPID_PRIVATE_KEY = "qUNcnHcAYe7H80Kdr-yh68e3dIFABfv-PUV0MfIINMQ"
 DEFAULT_CLAIMS_EMAIL = "mailto:admin@patchpile.app"
 SITE_URL = "https://mahfujarr.me/patchpile/"
 
@@ -64,7 +65,7 @@ def _build_payload(brand: str, green_lines: list[str]) -> dict:
     }
 
 
-def fetch_subscriptions(supabase_url: str, supabase_key: str) -> list[dict]:
+def fetch_subscriptions(supabase_url: str, supabase_key: str) -> list[dict] | None:
     url = f"{supabase_url.rstrip('/')}/rest/v1/push_subscriptions?select=id,endpoint,p256dh,auth"
     headers = {
         "apikey": supabase_key,
@@ -74,12 +75,12 @@ def fetch_subscriptions(supabase_url: str, supabase_key: str) -> list[dict]:
         resp = session.get(url, headers=headers, timeout=(5, 10))
         if resp.status_code != 200:
             epr(f"Failed to fetch subscriptions from Supabase ({resp.status_code}): {resp.text}")
-            return []
+            return None
         try:
             return resp.json()
         except Exception as e:
             epr(f"Failed to parse Supabase JSON: {e}")
-            return []
+            return None
 
 
 def delete_subscription(supabase_url: str, supabase_key: str, endpoint: str) -> None:
@@ -93,7 +94,7 @@ def delete_subscription(supabase_url: str, supabase_key: str, endpoint: str) -> 
 
 
 def notify(brand: str, final_md_path: str = "final.md") -> None:
-    vapid_private_key = os.getenv("VAPID_PRIVATE_KEY")
+    vapid_private_key = os.getenv("VAPID_PRIVATE_KEY", DEFAULT_VAPID_PRIVATE_KEY)
     if not vapid_private_key:
         epr("VAPID_PRIVATE_KEY not set in secrets, skipping Web Push notification")
         return
@@ -109,8 +110,12 @@ def notify(brand: str, final_md_path: str = "final.md") -> None:
 
     pr("Fetching push subscribers from Supabase...")
     subscriptions = fetch_subscriptions(supabase_url, supabase_key)
+    if subscriptions is None:
+        epr("Failed to load subscribers from Supabase.")
+        return
     if not subscriptions:
-        pr("No subscribers found or could not load subscribers.")
+        pr("Supabase connected successfully, but 0 devices have subscribed yet.")
+        pr("👉 Visit the website and click the notification bell to register your device first.")
         return
 
     pr(f"Found {len(subscriptions)} subscriber(s). Broadcasting Web Push...")
