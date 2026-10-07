@@ -1143,12 +1143,21 @@ if (!document.getElementById("spinner-style")) {
       if (!reg) {
         reg = await navigator.serviceWorker.register("./sw.js");
       }
-      await navigator.serviceWorker.ready;
+      const readyReg = await navigator.serviceWorker.ready;
+
+      // Clean up any stale subscription before subscribing
+      try {
+        const existingSub = await readyReg.pushManager.getSubscription();
+        if (existingSub) {
+          await existingSub.unsubscribe();
+        }
+      } catch (_) {}
 
       // Subscribe to Web Push
-      const newSub = await reg.pushManager.subscribe({
+      const appServerKey = urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
+      const newSub = await readyReg.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+        applicationServerKey: appServerKey,
       });
 
       const subJson = newSub.toJSON();
@@ -1160,7 +1169,7 @@ if (!document.getElementById("spinner-style")) {
 
       // Instant device confirmation notification
       try {
-        reg.showNotification("🔔 Patchpile Notifications Active", {
+        await readyReg.showNotification("🔔 Patchpile Notifications Active", {
           body: "Instant alerts are ready! You'll be notified when new APK builds are published.",
           icon: "./assets/favicon.svg",
           badge: "./assets/favicon.svg",
@@ -1196,7 +1205,36 @@ if (!document.getElementById("spinner-style")) {
       }
     } catch (err) {
       console.error("Failed to enable push notifications:", err);
-      showToast("Could not enable notifications: " + err.message);
+      const errStr = String(err?.message || err);
+
+      let isBrave = false;
+      try {
+        isBrave =
+          Boolean(navigator.brave) &&
+          typeof navigator.brave.isBrave === "function" &&
+          (await navigator.brave.isBrave());
+      } catch (_) {}
+
+      if (
+        isBrave &&
+        (errStr.includes("push service error") ||
+          errStr.includes("Registration failed"))
+      ) {
+        showToast(
+          "🦁 Brave blocks push messaging by default. Open brave://settings/privacy, enable 'Use Google services for push messaging', and relaunch Brave.",
+          9000,
+        );
+      } else if (
+        errStr.includes("push service error") ||
+        errStr.includes("Registration failed")
+      ) {
+        showToast(
+          "⚠️ Push service unreachable. Check if an ad blocker or VPN blocks Google FCM.",
+          8000,
+        );
+      } else {
+        showToast("Could not enable notifications: " + errStr);
+      }
       updateUiState("inactive");
     }
   }
