@@ -1038,6 +1038,86 @@ if (!document.getElementById("spinner-style")) {
     }
   }
 
+  const SUPABASE_URL = "https://anikploodichlpgfymiq.supabase.co";
+  const SUPABASE_KEY = "sb_publishable_r6Q5fgqVFu9TkH21jtmGjw_9MRXOYz8";
+
+  async function syncSubscriptionToSupabase(sub) {
+    if (!sub || !sub.endpoint) return;
+    const subJson = typeof sub.toJSON === "function" ? sub.toJSON() : sub;
+    const payload = {
+      endpoint: subJson.endpoint,
+      p256dh: subJson.keys?.p256dh || "",
+      auth: subJson.keys?.auth || "",
+      user_agent: (navigator.userAgent || "").slice(0, 200),
+      updated_at: new Date().toISOString(),
+    };
+
+    // 1. Try Supabase Client if available
+    const client = window.supabaseClient;
+    if (client) {
+      try {
+        const { error } = await client
+          .from("push_subscriptions")
+          .upsert(payload, { onConflict: "endpoint" });
+        if (!error) {
+          console.log("[Push] Subscription synced to Supabase successfully.");
+          return;
+        }
+        console.warn("[Push] Supabase SDK upsert error:", error.message);
+      } catch (err) {
+        console.warn("[Push] Supabase SDK exception:", err);
+      }
+    }
+
+    // 2. Direct REST API upsert fallback (always works independently)
+    try {
+      const res = await fetch(
+        `${SUPABASE_URL}/rest/v1/push_subscriptions?on_conflict=endpoint`,
+        {
+          method: "POST",
+          headers: {
+            apikey: SUPABASE_KEY,
+            Authorization: `Bearer ${SUPABASE_KEY}`,
+            "Content-Type": "application/json",
+            Prefer: "resolution=merge-duplicates",
+          },
+          body: JSON.stringify(payload),
+        },
+      );
+      if (res.ok) {
+        console.log("[Push] Subscription synced via direct REST API successfully.");
+      } else {
+        const errBody = await res.text();
+        console.error("[Push] Direct Supabase REST sync failed:", res.status, errBody);
+      }
+    } catch (netErr) {
+      console.error("[Push] Network error syncing to Supabase:", netErr);
+    }
+  }
+
+  async function deleteSubscriptionFromSupabase(endpoint) {
+    if (!endpoint) return;
+    const client = window.supabaseClient;
+    if (client) {
+      try {
+        await client.from("push_subscriptions").delete().eq("endpoint", endpoint);
+        return;
+      } catch (_) {}
+    }
+    try {
+      await fetch(
+        `${SUPABASE_URL}/rest/v1/push_subscriptions?endpoint=eq.${encodeURIComponent(endpoint)}`,
+        {
+          method: "DELETE",
+          headers: {
+            apikey: SUPABASE_KEY,
+            Authorization: `Bearer ${SUPABASE_KEY}`,
+          },
+        },
+      );
+    } catch (_) {}
+  }
+
   // Initial passive status check - NEVER request permission on load
   if (!isSupported) {
     updateUiState("unsupported");
@@ -1049,9 +1129,11 @@ if (!document.getElementById("spinner-style")) {
         updateUiState("inactive");
         return;
       }
-      reg.pushManager.getSubscription().then((sub) => {
+      reg.pushManager.getSubscription().then(async (sub) => {
         if (sub) {
           updateUiState("active");
+          // Re-sync existing subscription to Supabase so it's guaranteed to be registered!
+          await syncSubscriptionToSupabase(sub);
         } else {
           updateUiState("inactive");
         }
@@ -1102,21 +1184,12 @@ if (!document.getElementById("spinner-style")) {
     if (currentSub) {
       // User deliberately clicked to turn notifications OFF
       try {
-        const subJson = currentSub.toJSON();
+        const endpoint = currentSub.endpoint;
         await currentSub.unsubscribe();
         localStorage.setItem("patchpile-notif-enabled", "false");
         updateUiState("inactive");
         showToast("🔕 Release notifications turned off.");
-
-        // Remove from Supabase
-        if (window.supabaseClient && subJson.endpoint) {
-          supabaseClient
-            .from("push_subscriptions")
-            .delete()
-            .eq("endpoint", subJson.endpoint)
-            .then(() => {})
-            .catch(() => {});
-        }
+        await deleteSubscriptionFromSupabase(endpoint);
       } catch (e) {
         console.error("Error unsubscribing:", e);
         showToast("Could not unsubscribe: " + e.message);
@@ -1160,7 +1233,6 @@ if (!document.getElementById("spinner-style")) {
         applicationServerKey: appServerKey,
       });
 
-      const subJson = newSub.toJSON();
       localStorage.setItem("patchpile-notif-enabled", "true");
       updateUiState("active");
       showToast(
@@ -1178,31 +1250,7 @@ if (!document.getElementById("spinner-style")) {
       } catch (e) {}
 
       // Sync subscription to Supabase
-      if (window.supabaseClient && subJson.endpoint) {
-        const payload = {
-          endpoint: subJson.endpoint,
-          p256dh: subJson.keys?.p256dh || "",
-          auth: subJson.keys?.auth || "",
-          user_agent: (navigator.userAgent || "").slice(0, 200),
-          updated_at: new Date().toISOString(),
-        };
-
-        const { error } = await supabaseClient
-          .from("push_subscriptions")
-          .upsert(payload, { onConflict: "endpoint" });
-
-        if (error) {
-          console.warn(
-            "Supabase push subscription sync notice:",
-            error.message,
-          );
-          if (error.code === "PGRST205") {
-            console.info(
-              "To store subscriptions in Supabase, execute 'supabase_push_subscriptions.sql' in Supabase SQL editor.",
-            );
-          }
-        }
-      }
+      await syncSubscriptionToSupabase(newSub);
     } catch (err) {
       console.error("Failed to enable push notifications:", err);
       const errStr = String(err?.message || err);
