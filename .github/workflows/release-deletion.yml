@@ -4,9 +4,11 @@ on:
   schedule:
     - cron: "0 0 * * 6"
   workflow_dispatch:
+  workflow_call:
   workflow_run:
     workflows:
       - "Build APKs"
+      - "CI"
     types:
       - completed
 
@@ -14,7 +16,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: release-retention
+  group: patchpile-release-manifest
   cancel-in-progress: false
 
 jobs:
@@ -24,15 +26,18 @@ jobs:
       contents: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
 
       - name: Delete releases older than the three newest per source
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           tags=$(gh api --paginate --slurp "repos/$GITHUB_REPOSITORY/releases?per_page=100" \
-            | jq -r 'add | map(select(.draft == false)) | group_by(.tag_name | sub("^[^-]*-"; "")) | .[] | sort_by(.published_at) | reverse | .[3:][] | .tag_name')
-          if [[ -z "$tags" ]]; then
+            | jq -r '(add // []) | map(select(.draft == false)) | sort_by(.tag_name | sub("^[^-]*-"; "")) | group_by(.tag_name | sub("^[^-]*-"; "")) | .[] | sort_by(.published_at) | reverse | .[3:][] | .tag_name')
+          if [[ -z "${tags//[$'\t\r\n ']}" ]]; then
             echo "### 🗑️ Release Cleanup" >> "$GITHUB_STEP_SUMMARY"
             echo "No releases to delete." >> "$GITHUB_STEP_SUMMARY"
             exit 0
@@ -40,15 +45,18 @@ jobs:
           echo "### 🗑️ Release Cleanup" >> "$GITHUB_STEP_SUMMARY"
           echo "Deleted the following releases:" >> "$GITHUB_STEP_SUMMARY"
           while read -r tag; do
-            gh release delete "$tag" --repo "$GITHUB_REPOSITORY" --yes --cleanup-tag
+            [[ -z "$tag" ]] && continue
+            gh release delete "$tag" --repo "$GITHUB_REPOSITORY" --yes --cleanup-tag || true
             echo "- \`$tag\`" >> "$GITHUB_STEP_SUMMARY"
           done <<< "$tags"
 
       - name: Refresh site release manifest
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPOSITORY: ${{ github.repository }}
         run: |
+          git pull --ff-only origin main || true
           python src/scripts/site_manifest.py --repo "$REPOSITORY" --output assets/releases.json
 
           git config user.name "github-actions[bot]"
@@ -59,4 +67,5 @@ jobs:
             exit 0
           fi
           git commit -m "chore: update release manifest"
-          git push
+          git push origin HEAD:main
+

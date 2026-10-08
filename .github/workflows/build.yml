@@ -300,6 +300,28 @@ jobs:
 
           echo "has_apks=${has}" >> "$GITHUB_OUTPUT"
 
+      - name: Delete releases older than the three newest per source
+        if: steps.check.outputs.has_apks == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          tags=$(gh api --paginate --slurp "repos/$GITHUB_REPOSITORY/releases?per_page=100" \
+            | jq -r '(add // []) | map(select(.draft == false)) | sort_by(.tag_name | sub("^[^-]*-"; "")) | group_by(.tag_name | sub("^[^-]*-"; "")) | .[] | sort_by(.published_at) | reverse | .[3:][] | .tag_name')
+
+          if [[ -z "${tags//[$'\t\r\n ']}" ]]; then
+            echo "### 🗑️ Release Cleanup" >> "$GITHUB_STEP_SUMMARY"
+            echo "No releases to delete." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "### 🗑️ Release Cleanup" >> "$GITHUB_STEP_SUMMARY"
+            echo "Deleted the following releases:" >> "$GITHUB_STEP_SUMMARY"
+            while read -r tag; do
+              [[ -z "$tag" ]] && continue
+              gh release delete "$tag" --repo "$GITHUB_REPOSITORY" --yes --cleanup-tag || true
+              echo "- \`$tag\`" >> "$GITHUB_STEP_SUMMARY"
+            done <<< "$tags"
+          fi
+
       - name: Generate and push release manifest
         if: steps.check.outputs.has_apks == 'true'
         env:
