@@ -29,7 +29,9 @@ SITE_URL = "https://mahfujarr.me/patchpile/"
 def _clean_app_name(raw: str) -> str:
     cleaned = raw.strip()
     # Normalize abbreviations and hyphenation while preserving tags like Experimental / Stable
-    cleaned = cleaned.replace("YT-Music", "YT Music").replace("Google-Photos", "Google Photos")
+    cleaned = cleaned.replace("YT-Music", "YT Music").replace(
+        "Google-Photos", "Google Photos"
+    )
     if cleaned.startswith("GPhotos"):
         cleaned = cleaned.replace("GPhotos", "Google Photos", 1)
     return cleaned
@@ -57,6 +59,17 @@ def _parse_apps(text: str) -> list[dict]:
     return apps
 
 
+def _parse_patch_version(text: str) -> str:
+    """Extract patch version from '» Patches: `owner/patches-1.6.0.mpp`' lines."""
+    for line in text.splitlines():
+        if "» Patches:" not in line:
+            continue
+        m = re.search(r"patches[- _](\d+\.\d+(?:\.\d+)*)", line, re.IGNORECASE)
+        if m:
+            return m.group(1)
+    return ""
+
+
 def _lookup_apps_from_manifest(target: str) -> tuple[list[dict], str]:
     manifest_path = Path("assets/releases.json")
     if not manifest_path.exists():
@@ -74,9 +87,7 @@ def _lookup_apps_from_manifest(target: str) -> tuple[list[dict], str]:
         ]
         if not matching:
             matching = [
-                r
-                for r in all_releases
-                if norm in r.get("tag_name", "").lower()
+                r for r in all_releases if norm in r.get("tag_name", "").lower()
             ]
         if matching:
             matching.sort(
@@ -104,11 +115,13 @@ def _lookup_apps_from_manifest(target: str) -> tuple[list[dict], str]:
                     aname = a.get("name", "")
                     if aname.endswith(".apk"):
                         app_name = _clean_app_name(aname.split("-")[0].capitalize())
-                        apps.append({
-                            "name": app_name,
-                            "version": "",
-                            "dl_url": a.get("browser_download_url", ""),
-                        })
+                        apps.append(
+                            {
+                                "name": app_name,
+                                "version": "",
+                                "dl_url": a.get("browser_download_url", ""),
+                            }
+                        )
 
             return apps, tag
     except Exception as e:
@@ -129,10 +142,13 @@ def _format_app_list(names: list[str]) -> str:
 def _build_payload(target: str, final_md: Path | None = None) -> dict:
     apps: list[dict] = []
     tag_name = ""
+    patch_ver = ""
 
     # 1. Parse final_md if available
     if final_md and final_md.exists() and final_md.stat().st_size:
-        apps = _parse_apps(final_md.read_text(encoding="utf-8"))
+        final_text = final_md.read_text(encoding="utf-8")
+        apps = _parse_apps(final_text)
+        patch_ver = _parse_patch_version(final_text)
 
     # 2. Check releases.json for matching release and tag
     manifest_apps, manifest_tag = _lookup_apps_from_manifest(target)
@@ -145,7 +161,9 @@ def _build_payload(target: str, final_md: Path | None = None) -> dict:
         for app in apps:
             if not app.get("dl_url"):
                 for m_app in manifest_apps:
-                    if m_app["name"].lower() == app["name"].lower() and m_app.get("dl_url"):
+                    if m_app["name"].lower() == app["name"].lower() and m_app.get(
+                        "dl_url"
+                    ):
                         app["dl_url"] = m_app["dl_url"]
                         break
 
@@ -181,14 +199,20 @@ def _build_payload(target: str, final_md: Path | None = None) -> dict:
     primary_title_str = _format_app_list(app_names)
     title = f"New {primary_title_str} Update"
 
-    # Format body with version if single app
-    if len(apps) == 1 and apps[0].get("version"):
-        ver = apps[0]["version"]
-        body = f"{apps[0]['name']} (v{ver}) is ready for download."
-    elif len(apps) == 1:
-        body = f"New {apps[0]['name']} build is ready for download."
+    # Format body: single app uses patch version, multi-app uses app list
+    if len(apps) == 1:
+        name = apps[0]["name"]
+        if patch_ver:
+            body = f"{name} patched to v{patch_ver} is ready for download."
+        elif apps[0].get("version"):
+            body = f"{name} (v{apps[0]['version']}) is ready for download."
+        else:
+            body = f"New {name} build is ready for download."
     elif len(apps) > 1:
-        body = f"Updated {primary_title_str} builds are ready for download."
+        if patch_ver:
+            body = f"Patched with {target} v{patch_ver}, ready for download."
+        else:
+            body = f"Patched with {target}, ready for download."
     else:
         body = "New patched APKs are ready for download."
 
@@ -219,10 +243,7 @@ def _build_payload(target: str, final_md: Path | None = None) -> dict:
             "site_url": SITE_URL,
             "direct_url": direct_url,
             "download_urls": [a["dl_url"] for a in dl_apps],
-            "apps": [
-                {"name": a["name"], "dl_url": a.get("dl_url", "")}
-                for a in apps
-            ],
+            "apps": [{"name": a["name"], "dl_url": a.get("dl_url", "")} for a in apps],
         },
     }
 
