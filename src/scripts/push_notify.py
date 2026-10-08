@@ -359,8 +359,11 @@ def notify(brand: str, final_md_path: str = "final.md") -> None:
                 else None
             )
             text = getattr(ex.response, "text", "") if ex.response is not None else ""
+            # WNS (Edge/Windows) returns 401 for expired subscriptions instead of 404/410
+            is_wns = "notify.windows.com" in endpoint
             if (
                 status in (404, 410)
+                or (status == 401 and is_wns)
                 or "NotRegistered" in text
                 or "InvalidRegistration" in text
             ):
