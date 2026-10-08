@@ -33,10 +33,17 @@ jobs:
           tags=$(gh api --paginate --slurp "repos/$GITHUB_REPOSITORY/releases?per_page=100" \
             | jq -r 'add | map(select(.draft == false)) | group_by(.tag_name | sub("^[^-]*-"; "")) | .[] | sort_by(.published_at) | reverse | .[3:][] | .tag_name')
           if [[ -z "$tags" ]]; then
+            echo "### 🗑️ Release Cleanup" >> "$GITHUB_STEP_SUMMARY"
+            echo "No releases to delete." >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
           while read -r tag; do
                 gh release delete "$tag" --repo "$GITHUB_REPOSITORY" --yes --cleanup-tag
+          done <<< "$tags"
+          echo "### 🗑️ Release Cleanup" >> "$GITHUB_STEP_SUMMARY"
+          echo "Deleted the following releases:" >> "$GITHUB_STEP_SUMMARY"
+          while read -r tag; do
+            echo "- \`$tag\`" >> "$GITHUB_STEP_SUMMARY"
           done <<< "$tags"
 
       - name: Refresh site release manifest
