@@ -606,7 +606,7 @@ function showToast(message, duration = 4500) {
           const dlBtn = document.createElement("a");
           dlBtn.className = "wn-app-btn";
           dlBtn.href = app.dlUrl;
-          dlBtn.setAttribute("target", "_blank");
+          // dlBtn.setAttribute("target", "_blank");
           dlBtn.setAttribute("rel", "noopener");
           dlBtn.innerHTML = `
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
