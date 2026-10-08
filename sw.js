@@ -132,13 +132,23 @@ self.addEventListener('notificationclick', (event) => {
   }
 
   // Default click on notification body:
+  const downloadUrls = (notifData.download_urls || []).filter(Boolean);
+
+  // Multi-app: open all APK download URLs
+  if (downloadUrls.length >= 2) {
+    event.waitUntil(
+      Promise.all(downloadUrls.map((url) => clients.openWindow(url)))
+    );
+    return;
+  }
+
   const targetUrl =
     notifData.url ||
     notifData.direct_url ||
     notifData.site_url ||
     self.location.origin;
 
-  // Direct APK downloads must always use clients.openWindow (client.navigate rejects cross-origin)
+  // Single APK: direct download via openWindow
   if (targetUrl.endsWith('.apk') || targetUrl.includes('/releases/download/')) {
     if (clients.openWindow) {
       event.waitUntil(clients.openWindow(targetUrl));
