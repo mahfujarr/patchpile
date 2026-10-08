@@ -222,11 +222,6 @@ def _build_payload(target: str, final_md: Path | None = None) -> dict:
         else "patchpile-update"
     )
 
-    dl_apps = [a for a in apps if a.get("dl_url")]
-    direct_url = dl_apps[0]["dl_url"] if len(dl_apps) == 1 else ""
-
-    click_url = direct_url if direct_url else SITE_URL
-
     return {
         "title": title,
         "body": body,
@@ -234,11 +229,8 @@ def _build_payload(target: str, final_md: Path | None = None) -> dict:
         "badge": "./assets/favicon.svg",
         "tag": tag,
         "data": {
-            "url": click_url,
+            "url": SITE_URL,
             "site_url": SITE_URL,
-            "direct_url": direct_url,
-            "download_urls": [a["dl_url"] for a in dl_apps],
-            "apps": [{"name": a["name"], "dl_url": a.get("dl_url", "")} for a in apps],
         },
     }
 
