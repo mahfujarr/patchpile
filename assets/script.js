@@ -982,11 +982,15 @@ function showToast(message, duration = 4500) {
       }
     }
 
-    // Fast path: direct download link provided in query params
+    // Fast path: direct download link(s) provided in query params
     if (directDl) {
+      const allDls = params.getAll("dl").filter(Boolean);
+      const dlList = allDls.length > 0 ? allDls : [directDl];
       const appName = appNameParam ? decodeURIComponent(appNameParam) : "APK";
       showToast(`⬇️ Automatically downloading ${appName}...`, 5500);
-      triggerDownload(directDl);
+      dlList.forEach((url, idx) => {
+        setTimeout(() => triggerDownload(url), idx * 750);
+      });
       scrollToMatchingCard(appName);
 
       // Clean query string from browser URL bar without page reload

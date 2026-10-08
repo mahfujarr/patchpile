@@ -225,12 +225,18 @@ def _build_payload(target: str, final_md: Path | None = None) -> dict:
     dl_apps = [a for a in apps if a.get("dl_url")]
     direct_url = dl_apps[0]["dl_url"] if len(dl_apps) == 1 else ""
 
-    autodl_tag = tag_name or target
-    site_autodl_url = f"{SITE_URL}?autodownload={quote(autodl_tag, safe='')}"
-
-    # For single-app updates, direct_url triggers browser download manager immediately on click
-    # For multi-app updates, site_autodl_url opens the site to download both apps
-    click_url = direct_url if direct_url else site_autodl_url
+    # Build click URL:
+    # - Single app with known URL → direct APK link (browser downloads immediately)
+    # - Multi-app with known URLs → site with ?dl=url1&dl=url2 (site fast-path downloads all)
+    # - Fallback → site with ?autodownload=tag
+    if direct_url:
+        click_url = direct_url
+    elif len(dl_apps) >= 2:
+        dl_params = "&".join(f"dl={quote(a['dl_url'], safe='')}" for a in dl_apps)
+        click_url = f"{SITE_URL}?{dl_params}"
+    else:
+        autodl_tag = tag_name or target
+        click_url = f"{SITE_URL}?autodownload={quote(autodl_tag, safe='')}"
 
     return {
         "title": title,

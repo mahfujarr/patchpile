@@ -132,30 +132,23 @@ self.addEventListener('notificationclick', (event) => {
   }
 
   // Default click on notification body:
-  const downloadUrls = (notifData.download_urls || []).filter(Boolean);
-
-  // Multi-app: open all APK download URLs
-  if (downloadUrls.length >= 2) {
-    event.waitUntil(
-      Promise.all(downloadUrls.map((url) => clients.openWindow(url)))
-    );
-    return;
-  }
-
+  // notifData.url is:
+  //   - a direct .apk URL for single-app releases
+  //   - a site ?dl=url1&dl=url2 URL for multi-app (site fast-path downloads all with stagger)
+  //   - a site ?autodownload=tag URL as fallback
   const targetUrl =
     notifData.url ||
     notifData.direct_url ||
     notifData.site_url ||
     self.location.origin;
 
-  // Single APK: direct download via openWindow
+  // Direct APK: open new tab → browser download manager kicks in immediately
   if (targetUrl.endsWith('.apk') || targetUrl.includes('/releases/download/')) {
-    if (clients.openWindow) {
-      event.waitUntil(clients.openWindow(targetUrl));
-      return;
-    }
+    event.waitUntil(clients.openWindow(targetUrl));
+    return;
   }
 
+  // Site URL (multi-dl or autodownload): focus existing tab or open new one
   event.waitUntil(
     clients
       .matchAll({ type: 'window', includeUncontrolled: true })
