@@ -142,18 +142,6 @@ function showToast(message, duration = 4500) {
     return ` ${timePart}, ${datePart}`;
   }
 
-  function formatShortTime(iso) {
-    const d = new Date(iso);
-    if (isNaN(d.getTime())) return "";
-    const diff = Math.max(0, Date.now() - d.getTime());
-    const mins = Math.floor(diff / 60000);
-    if (mins < 60) return `${Math.max(1, mins)}m ago`;
-    const hours = Math.floor(mins / 60);
-    if (hours < 24) return `${hours}h ago`;
-    const days = Math.floor(hours / 24);
-    if (days < 30) return `${days}d ago`;
-    return d.toLocaleDateString("en-GB", { day: "2-digit", month: "short" });
-  }
 
   function formatHoursAgo(iso) {
     const d = new Date(iso);
@@ -948,9 +936,8 @@ function showToast(message, duration = 4500) {
       }
     } catch (e) {}
   })();
-
-
 })();
+
 
 // --- Add spinner animation CSS ---
 if (!document.getElementById("spinner-style")) {

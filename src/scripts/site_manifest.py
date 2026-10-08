@@ -25,6 +25,9 @@ def fetch_json(url: str, token: str) -> object:
         return json.load(response)
 
 
+_upstream_cache: dict[tuple[str, str], dict[str, str] | None] = {}
+
+
 def upstream_release(release: dict[str, object], token: str) -> dict[str, str] | None:
     body = str(release.get("body") or "")
     match = CHANGELOG_URL.search(body)
@@ -32,18 +35,27 @@ def upstream_release(release: dict[str, object], token: str) -> dict[str, str] |
         return None
 
     repo, tag = match.groups()
+    key = (repo, tag)
+    if key in _upstream_cache:
+        return _upstream_cache[key]
+
     url = f"https://api.github.com/repos/{repo}/releases/tags/{quote(tag, safe='')}"
     try:
         data = fetch_json(url, token)
     except HTTPError:
+        _upstream_cache[key] = None
         return None
     if not isinstance(data, dict):
+        _upstream_cache[key] = None
         return None
-    return {
+
+    res = {
         "tag_name": str(data.get("tag_name") or tag),
         "body": str(data.get("body") or ""),
         "html_url": str(data.get("html_url") or match.group(0)),
     }
+    _upstream_cache[key] = res
+    return res
 
 
 def enrich_releases(releases: object, token: str) -> list[dict[str, object]]:

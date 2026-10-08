@@ -12,7 +12,7 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('push', (event) => {
   let data = {
     title: 'Patchpile: New Release Published',
-    body: 'New patched APKs are ready for download!',
+    body: 'Click to download.',
     icon: './assets/favicon.svg',
     badge: './assets/favicon.svg',
     tag: 'patchpile-release',

@@ -37,12 +37,10 @@ jobs:
             echo "No releases to delete." >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
-          while read -r tag; do
-                gh release delete "$tag" --repo "$GITHUB_REPOSITORY" --yes --cleanup-tag
-          done <<< "$tags"
           echo "### 🗑️ Release Cleanup" >> "$GITHUB_STEP_SUMMARY"
           echo "Deleted the following releases:" >> "$GITHUB_STEP_SUMMARY"
           while read -r tag; do
+            gh release delete "$tag" --repo "$GITHUB_REPOSITORY" --yes --cleanup-tag
             echo "- \`$tag\`" >> "$GITHUB_STEP_SUMMARY"
           done <<< "$tags"
 

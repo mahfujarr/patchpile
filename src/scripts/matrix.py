@@ -112,11 +112,13 @@ def get_matrix(source: str) -> None:
 def check_builds_needed(force_all: bool = False) -> None:
     seen: dict[str, str] = {}
     dev_brands: set[str] = set()
+    entries_by_brand: dict[str, list[AppEntry]] = {}
     entries = _load_entries()
     for entry in entries:
         if not entry.enabled:
             continue
         brand = entry.brand.lower()
+        entries_by_brand.setdefault(brand, []).append(entry)
         if brand not in seen:
             seen[brand] = next(iter(entry.patches), "")
         if any(spec["version"] == "dev" for spec in entry.patches.values()):
@@ -133,11 +135,6 @@ def check_builds_needed(force_all: bool = False) -> None:
     repo = os.getenv("GITHUB_REPOSITORY")
     if not repo:
         abort("GITHUB_REPOSITORY environment variable is not set")
-
-    entries_by_brand: dict[str, list[AppEntry]] = {}
-    for entry in entries:
-        if entry.enabled:
-            entries_by_brand.setdefault(entry.brand.lower(), []).append(entry)
 
     with NetworkManager() as net:
         our_releases_by_brand = _fetch_our_releases(repo, net)
