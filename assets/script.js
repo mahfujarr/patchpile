@@ -40,9 +40,6 @@ function showToast(message, duration = 4500) {
     link.hidden = true;
   });
 
-  const googlePhotosCards = document.querySelectorAll(".gphotos-variant");
-  const googlePhotosButtons = document.querySelectorAll(".gphotos-variant-btn");
-
   function setAppChangelogOpen(app, open) {
     app?.querySelectorAll(".changelog-menu").forEach((menu) => {
       menu.open = open;
@@ -56,34 +53,6 @@ function showToast(message, duration = 4500) {
         const menu = summary.parentElement;
         setAppChangelogOpen(app, !menu.open);
       });
-    });
-  });
-
-  function setGooglePhotosVariant(variant) {
-    const currentCard = [...googlePhotosCards].find((card) => !card.hidden);
-    const changelogOpen = currentCard
-      ? [...currentCard.querySelectorAll(".changelog-menu")].some(
-          (menu) => menu.open,
-        )
-      : false;
-    googlePhotosCards.forEach((card) => {
-      card.hidden = card.dataset.variant !== variant;
-    });
-    const nextCard = [...googlePhotosCards].find(
-      (card) => card.dataset.variant === variant,
-    );
-    setAppChangelogOpen(nextCard, changelogOpen);
-    googlePhotosButtons.forEach((button) => {
-      button.setAttribute(
-        "aria-pressed",
-        String(button.dataset.variant === variant),
-      );
-    });
-  }
-
-  googlePhotosButtons.forEach((button) => {
-    button.addEventListener("click", () => {
-      setGooglePhotosVariant(button.dataset.variant);
     });
   });
 
@@ -141,7 +110,6 @@ function showToast(message, duration = 4500) {
     });
     return ` ${timePart}, ${datePart}`;
   }
-
 
   function formatHoursAgo(iso) {
     const d = new Date(iso);
@@ -486,17 +454,17 @@ function showToast(message, duration = 4500) {
     const match = tag.match(/^\d+[\d.]*-(.+)$/);
     const raw = match ? match[1].toLowerCase() : tag.toLowerCase();
     const brandMap = {
-      "morphe": "Morphe",
+      morphe: "Morphe",
       "morphe-dev": "Morphe-dev",
-      "piko": "Piko",
+      piko: "Piko",
       "piko-dev": "Piko-dev",
-      "devanced": "De-vanced",
+      devanced: "De-vanced",
       "de-vanced": "De-vanced",
-      "rushi": "Rushi",
+      rushi: "Rushi",
       "hoo-dles": "Hoo-dles",
-      "hooman": "Hooman",
-      "paresh": "Paresh",
-      "tiktok": "TikTok",
+      hooman: "Hooman",
+      paresh: "Paresh",
+      tiktok: "TikTok",
     };
     if (brandMap[raw]) return brandMap[raw];
     return raw
@@ -534,9 +502,6 @@ function showToast(message, duration = 4500) {
       if (brandEl) {
         brandEl.textContent = getReleaseBrand(rel);
       }
-      if (tagEl) {
-        tagEl.textContent = rel.tag_name;
-      }
       if (timeEl) {
         const timeStr = formatHoursAgo(rel.published_at || rel.created_at);
         timeEl.textContent = timeStr;
@@ -547,6 +512,29 @@ function showToast(message, duration = 4500) {
         linkEl.href =
           rel.html_url ||
           `https://github.com/mahfujarr/patchpile/releases/tag/${rel.tag_name}`;
+      }
+
+      // Upstream patch version resolution
+      const upstream = rel.upstream_release;
+      let patchStr = upstream?.tag_name || "";
+      if (!patchStr && rel.body) {
+        const pMatch = rel.body.match(/Patches:\s*`?([^`\r\n]+)`?/i);
+        if (pMatch) {
+          const raw = pMatch[1].trim();
+          const vMatch =
+            raw.match(/patches-([^\s.]+.*)\.mpp/i) ||
+            raw.match(/v?(\d+\.\d+[\w.-]*)/i);
+          patchStr = vMatch ? "v" + vMatch[1].replace(/^v/, "") : raw;
+        }
+      }
+
+      if (patchTagEl) {
+        if (patchStr) {
+          patchTagEl.textContent = "Patches: " + patchStr;
+          patchTagEl.hidden = false;
+        } else {
+          patchTagEl.hidden = true;
+        }
       }
 
       // Changed apps
@@ -589,14 +577,10 @@ function showToast(message, duration = 4500) {
             vSpan.textContent = "v" + app.version;
             meta.append(vSpan);
           }
-          if (app.arch) {
-            const aSpan = document.createElement("span");
-            aSpan.textContent = app.arch;
-            meta.append(aSpan);
-          }
           if (app.size) {
             const sSpan = document.createElement("span");
-            sSpan.textContent = "· " + app.size;
+            sSpan.className = "wn-size";
+            sSpan.textContent = app.size.replace(/^Size:\s*/i, "");
             meta.append(sSpan);
           }
           info.append(meta);
@@ -606,7 +590,6 @@ function showToast(message, duration = 4500) {
           const dlBtn = document.createElement("a");
           dlBtn.className = "wn-app-btn";
           dlBtn.href = app.dlUrl;
-          // dlBtn.setAttribute("target", "_blank");
           dlBtn.setAttribute("rel", "noopener");
           dlBtn.innerHTML = `
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
@@ -621,19 +604,20 @@ function showToast(message, duration = 4500) {
       }
 
       // Changelog
-      const upstream = rel.upstream_release;
-      if (upstream && patchTagEl) {
-        patchTagEl.textContent = "Patches: " + (upstream.tag_name || "latest");
-        patchTagEl.hidden = false;
-      } else if (patchTagEl) {
-        patchTagEl.hidden = true;
+      let upstreamUrl = upstream?.html_url || "";
+      if (!upstreamUrl && rel.body) {
+        const urlMatch = rel.body.match(
+          /\[🔗\s*»\s*Changelog\]\((https?:\/\/[^\s)]+)\)/i,
+        );
+        if (urlMatch) upstreamUrl = urlMatch[1];
       }
-
-      if (upstream && upstream.html_url && upstreamLinkEl) {
-        upstreamLinkEl.href = upstream.html_url;
-        upstreamLinkEl.hidden = false;
-      } else if (upstreamLinkEl) {
-        upstreamLinkEl.hidden = true;
+      if (upstreamLinkEl) {
+        if (upstreamUrl) {
+          upstreamLinkEl.href = upstreamUrl;
+          upstreamLinkEl.hidden = false;
+        } else {
+          upstreamLinkEl.hidden = true;
+        }
       }
 
       const notes =
@@ -877,20 +861,26 @@ function showToast(message, duration = 4500) {
           builtEl.classList.remove("skel");
         }
 
-        if (card.classList.contains("gphotos-variant")) {
-          card.dataset.releaseTime = data.published_at || data.created_at || "";
-        }
+        card.dataset.releaseTime = data.published_at || data.created_at || "";
       });
     }
 
-    const latestGooglePhotosCard = [...googlePhotosCards]
-      .filter((card) => card.dataset.releaseTime)
-      .sort(
-        (a, b) =>
-          Date.parse(b.dataset.releaseTime) - Date.parse(a.dataset.releaseTime),
-      )[0];
-    if (latestGooglePhotosCard) {
-      setGooglePhotosVariant(latestGooglePhotosCard.dataset.variant);
+    const gphotosApp = document.querySelector(
+      '.app[data-asset-match="google-photos-rushi"]',
+    );
+    if (gphotosApp) {
+      const devancedItem = gphotosApp.querySelector(
+        '.exp-item[data-asset-match="gphotos-devanced"]',
+      );
+      if (
+        devancedItem &&
+        Date.parse(devancedItem.dataset.releaseTime || "") >
+          Date.parse(gphotosApp.dataset.releaseTime || "")
+      ) {
+        gphotosApp
+          .querySelector('.build-variant-btn[data-build="experimental"]')
+          ?.click();
+      }
     }
 
     if (rateLimitTriggered) {
@@ -937,7 +927,6 @@ function showToast(message, duration = 4500) {
     } catch (e) {}
   })();
 })();
-
 
 // --- Add spinner animation CSS ---
 if (!document.getElementById("spinner-style")) {
@@ -1075,10 +1064,16 @@ if (!document.getElementById("spinner-style")) {
         },
       );
       if (res.ok) {
-        console.log("[Push] Subscription synced via direct REST API successfully.");
+        console.log(
+          "[Push] Subscription synced via direct REST API successfully.",
+        );
       } else {
         const errBody = await res.text();
-        console.error("[Push] Direct Supabase REST sync failed:", res.status, errBody);
+        console.error(
+          "[Push] Direct Supabase REST sync failed:",
+          res.status,
+          errBody,
+        );
       }
     } catch (netErr) {
       console.error("[Push] Network error syncing to Supabase:", netErr);
@@ -1090,7 +1085,10 @@ if (!document.getElementById("spinner-style")) {
     const client = window.supabaseClient;
     if (client) {
       try {
-        await client.from("push_subscriptions").delete().eq("endpoint", endpoint);
+        await client
+          .from("push_subscriptions")
+          .delete()
+          .eq("endpoint", endpoint);
         return;
       } catch (_) {}
     }

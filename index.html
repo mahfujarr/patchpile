@@ -106,6 +106,7 @@
       <summary class="whats-new-summary">
         <div class="whats-new-summary-left">
           <span class="live-dot" aria-hidden="true"></span>
+          <span class="whats-new-badge">What's New</span>
           <span class="whats-new-brand" id="wn-summary-brand">Checking builds…</span>
           <span class="whats-new-sep" id="wn-summary-sep" aria-hidden="true" hidden>·</span>
           <span class="whats-new-time" id="wn-release-time"></span>
@@ -114,19 +115,24 @@
       </summary>
 
       <div class="whats-new-body">
-        <div class="whats-new-toolbar">
+        <div class="whats-new-runs-wrapper">
+          <div class="wn-subheading">Recent Builds</div>
           <div class="whats-new-runs" id="wn-runs-bar" role="tablist" aria-label="Recent workflow runs"></div>
-          <div class="whats-new-toolbar-right">
-            <span class="whats-new-tag" id="wn-release-tag"></span>
-            <a class="whats-new-gh-link" id="wn-release-link" href="https://github.com/mahfujarr/patchpile/releases"
-              target="_blank" rel="noopener" title="View release on GitHub">
-              <span>GitHub release</span>
-              <svg viewBox="0 0 16 16" fill="currentColor" width="12" height="12">
-                <path
-                  d="M3.75 2h8.5a.75.75 0 0 1 .75.75v8.5a.75.75 0 0 1-1.5 0V4.56L2.53 13.53a.75.75 0 0 1-1.06-1.06L10.44 3.5H3.75a.75.75 0 0 1 0-1.5Z" />
-              </svg>
-            </a>
+        </div>
+
+        <div class="wn-release-banner">
+          <div class="wn-badges-row">
+            <span class="whats-new-tag wn-release-tag" id="wn-release-tag"></span>
+            <span class="wn-patch-tag" id="wn-patch-tag" hidden></span>
           </div>
+          <a class="whats-new-gh-link" id="wn-release-link" href="https://github.com/mahfujarr/patchpile/releases"
+            target="_blank" rel="noopener" title="View release on GitHub">
+            <span>GitHub Release</span>
+            <svg viewBox="0 0 16 16" fill="currentColor" width="12" height="12">
+              <path
+                d="M3.75 2h8.5a.75.75 0 0 1 .75.75v8.5a.75.75 0 0 1-1.5 0V4.56L2.53 13.53a.75.75 0 0 1-1.06-1.06L10.44 3.5H3.75a.75.75 0 0 1 0-1.5Z" />
+            </svg>
+          </a>
         </div>
 
         <div class="whats-new-apps-card">
@@ -138,8 +144,14 @@
 
         <div class="whats-new-changelog-card" id="wn-changelog-card">
           <div class="wn-changelog-header">
-            <div class="wn-subheading">Changelog &amp; Upstream Patches</div>
-            <span class="wn-patch-tag" id="wn-patch-tag" hidden></span>
+            <div class="wn-subheading">Changelog &amp; Upstream Notes</div>
+            <a class="wn-upstream-link" id="wn-upstream-link" href="#" target="_blank" rel="noopener" hidden>
+              <span>Upstream changelog</span>
+              <svg viewBox="0 0 16 16" fill="currentColor" width="11" height="11">
+                <path
+                  d="M3.75 2h8.5a.75.75 0 0 1 .75.75v8.5a.75.75 0 0 1-1.5 0V4.56L2.53 13.53a.75.75 0 0 1-1.06-1.06L10.44 3.5H3.75a.75.75 0 0 1 0-1.5Z" />
+              </svg>
+            </a>
           </div>
           <div class="whats-new-notes" id="wn-changelog-content">
             Loading changelog…
@@ -148,7 +160,6 @@
             <button type="button" class="wn-expand-btn" id="wn-expand-btn" aria-expanded="false" style="display:none;">
               Show more
             </button>
-            <a class="wn-upstream-link" id="wn-upstream-link" href="#" target="_blank" rel="noopener" hidden>Upstream changelog ↗</a>
           </div>
         </div>
       </div>
@@ -210,7 +221,7 @@
                       stroke-linejoin="round">
                       <path d="M12 3v12m0 0 4-4m-4 4-4-4M5 21h14" />
                     </svg>
-                    <span>Download Experimental</span>
+                    <span>Download</span>
                   </a>
                 </div>
               </div>
@@ -248,7 +259,7 @@
             stroke-linejoin="round">
             <path d="M12 3v12m0 0 4-4m-4 4-4-4M5 21h14" />
           </svg>
-          <span>Download Experimental</span>
+          <span>Download</span>
         </a>
       </div>
 
@@ -306,7 +317,7 @@
                       stroke-linejoin="round">
                       <path d="M12 3v12m0 0 4-4m-4 4-4-4M5 21h14" />
                     </svg>
-                    <span>Download Experimental</span>
+                    <span>Download</span>
                   </a>
                 </div>
               </div>
@@ -344,21 +355,22 @@
             stroke-linejoin="round">
             <path d="M12 3v12m0 0 4-4m-4 4-4-4M5 21h14" />
           </svg>
-          <span>Download Experimental</span>
+          <span>Download</span>
         </a>
       </div>
 
-      <div id="gphotos-devanced" class="app gphotos-variant" data-variant="devanced" data-repo="mahfujarr/patchpile"
-        data-patch-source="devanced" data-asset-match="gphotos-devanced" hidden>
+      <div class="app" data-build-state="stable" data-repo="mahfujarr/patchpile" data-patch-source="rushi"
+        data-asset-match="google-photos-rushi">
         <div class="icon gph">
           <img src="https://www.gstatic.com/images/branding/product/2x/photos_96dp.png" alt="" aria-hidden="true" />
         </div>
         <div class="app-info">
-          <div class="app-name">Google Photos <span class="patch">devanced</span></div>
-          <div class="gphotos-variants" role="group" aria-label="Choose Google Photos version">
-            <button class="gphotos-variant-btn" type="button" data-variant="rushi" aria-controls="gphotos-rushi"
-              aria-pressed="true">rushi</button>
-            <button class="gphotos-variant-btn" type="button" data-variant="devanced" aria-controls="gphotos-devanced"
+          <div class="app-name"><span class="app-name-label stable-name">Google Photos <span
+                class="patch">rushi</span></span><span class="app-name-label experimental-name">Google Photos <span
+                class="patch">devanced</span></span></div>
+          <div class="build-variants" role="group" aria-label="Choose Google Photos build">
+            <button class="build-variant-btn" type="button" data-build="stable" aria-pressed="true">rushi</button>
+            <button class="build-variant-btn" type="button" data-build="experimental"
               aria-pressed="false">devanced</button>
           </div>
           <div class="app-desc">Unlimited backup tier unlocked, ads stripped.</div>
@@ -373,6 +385,36 @@
             <a class="changelog-link" href="https://github.com/mahfujarr/patchpile/releases" target="_blank"
               rel="noopener">View full release</a>
           </details>
+          <div class="app-exp">
+            <details class="exp-menu">
+              <summary>devanced build</summary>
+              <div class="exp-list">
+                <div class="exp-item" data-repo="mahfujarr/patchpile" data-patch-source="devanced"
+                  data-asset-match="gphotos-devanced">
+                  <div class="exp-main">
+                    <div class="exp-version">
+                      <span class="v-num"></span>
+                      <span class="f-size skel"></span>
+                      <span class="f-built skel"></span>
+                    </div>
+                    <details class="changelog-menu">
+                      <summary>What's new?</summary>
+                      <div class="changelog-content">Loading release notes...</div>
+                      <a class="changelog-link" href="https://github.com/mahfujarr/patchpile/releases" target="_blank"
+                        rel="noopener">View full release</a>
+                    </details>
+                  </div>
+                  <a class="dl-btn" href="https://github.com/mahfujarr/patchpile/releases">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"
+                      stroke-linejoin="round">
+                      <path d="M12 3v12m0 0 4-4m-4 4-4-4M5 21h14" />
+                    </svg>
+                    <span>Download</span>
+                  </a>
+                </div>
+              </div>
+            </details>
+          </div>
         </div>
         <a class="dl-btn" href="https://github.com/mahfujarr/patchpile/releases">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"
@@ -381,35 +423,7 @@
           </svg>
           <span>Download</span>
         </a>
-      </div>
-
-      <div id="gphotos-rushi" class="app gphotos-variant" data-variant="rushi" data-repo="mahfujarr/patchpile"
-        data-patch-source="rushi" data-asset-match="google-photos-rushi">
-        <div class="icon gph">
-          <img src="https://www.gstatic.com/images/branding/product/2x/photos_96dp.png" alt="" aria-hidden="true" />
-        </div>
-        <div class="app-info">
-          <div class="app-name">Google Photos <span class="patch">rushi</span></div>
-          <div class="gphotos-variants" role="group" aria-label="Choose Google Photos version">
-            <button class="gphotos-variant-btn" type="button" data-variant="rushi" aria-controls="gphotos-rushi"
-              aria-pressed="true">rushi</button>
-            <button class="gphotos-variant-btn" type="button" data-variant="devanced" aria-controls="gphotos-devanced"
-              aria-pressed="false">devanced</button>
-          </div>
-          <div class="app-desc">Unlimited backup tier unlocked, ads stripped.</div>
-          <div class="app-version">
-            <span class="v-num"></span>
-            <span class="f-size skel"></span>
-            <span class="f-built skel"></span>
-          </div>
-          <details class="changelog-menu">
-            <summary>What's new?</summary>
-            <div class="changelog-content">Loading release notes...</div>
-            <a class="changelog-link" href="https://github.com/mahfujarr/patchpile/releases" target="_blank"
-              rel="noopener">View full release</a>
-          </details>
-        </div>
-        <a class="dl-btn" href="https://github.com/mahfujarr/patchpile/releases">
+        <a class="dl-btn experimental-dl-btn" href="https://github.com/mahfujarr/patchpile/releases">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"
             stroke-linejoin="round">
             <path d="M12 3v12m0 0 4-4m-4 4-4-4M5 21h14" />
@@ -481,7 +495,7 @@
                       stroke-linejoin="round">
                       <path d="M12 3v12m0 0 4-4m-4 4-4-4M5 21h14" />
                     </svg>
-                    <span>Download Experimental</span>
+                    <span>Download</span>
                   </a>
                 </div>
               </div>
@@ -500,7 +514,7 @@
             stroke-linejoin="round">
             <path d="M12 3v12m0 0 4-4m-4 4-4-4M5 21h14" />
           </svg>
-          <span>Download Experimental</span>
+          <span>Download</span>
         </a>
       </div>
 
