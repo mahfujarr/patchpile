@@ -535,11 +535,6 @@ h1 .accent {
   left: 0;
   right: 0;
   height: 3px;
-  background: linear-gradient(
-    90deg,
-    var(--accent),
-    var(--color-secondary, #ff7b00)
-  );
   opacity: 0.85;
 }
 
@@ -596,7 +591,7 @@ h1 .accent {
   border-radius: 50%;
   box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.2);
   display: inline-block;
-  animation: pulse-dot 2s infinite ease-in-out;
+  animation: pulse-dot 1s infinite ease-in-out;
   flex-shrink: 0;
 }
 
@@ -786,7 +781,7 @@ h1 .accent {
 .wn-patch-tag {
   background: var(--accent-dim);
   color: var(--accent);
-  border: 1px solid var(--accent);
+  /* border: 1px solid var(--accent); */
   padding: 4px 10px;
   border-radius: 6px;
   font-family: var(--mono);
@@ -871,7 +866,7 @@ h1 .accent {
 
 .wn-app-item:hover {
   border-color: var(--accent);
-  transform: translateY(-1px);
+  /* transform: translateY(-1px); */
   box-shadow: 0 4px 12px var(--shadow-color);
 }
 
@@ -923,8 +918,7 @@ h1 .accent {
 }
 
 .wn-app-meta .wn-ver {
-  color: var(--text);
-  font-weight: 600;
+  color: var(--text-faint);
   background: var(--bg-card-s);
   border: 1px solid var(--line);
   padding: 1px 6px;
@@ -936,7 +930,7 @@ h1 .accent {
 }
 
 .wn-app-meta .wn-size {
-  color: var(--text-dim);
+  color: var(--text-faint);
   background: var(--bg-card-s);
   border: 1px solid var(--line-soft);
   padding: 1px 5px;
@@ -972,7 +966,7 @@ h1 .accent {
 
 .wn-app-btn:hover {
   opacity: 0.92;
-  transform: scale(1.02);
+  transform: scale(0.98);
 }
 
 .wn-app-btn svg {
@@ -1370,7 +1364,6 @@ h1 .accent {
     gap: 12px;
   }
 
-
   .wn-app-item {
     padding: 10px 12px;
   }
@@ -1426,13 +1419,6 @@ h1 .accent {
   border-top: 1px solid var(--line-soft);
 }
 
-.gphotos-variants {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  margin-top: 6px;
-}
-
 .build-variants {
   display: inline-flex;
   align-items: center;
@@ -1440,7 +1426,6 @@ h1 .accent {
   margin-top: 6px;
 }
 
-.gphotos-variant-btn,
 .build-variant-btn {
   border: 1px solid var(--line);
   border-radius: 5px;
@@ -1451,28 +1436,23 @@ h1 .accent {
   font-weight: 500;
   cursor: pointer;
   min-height: 26px;
-  padding: 3px 7px;
+  min-width: 58px;
+  padding: 3px 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
   transition:
     background 0.15s,
     border-color 0.15s,
     color 0.15s;
 }
 
-.gphotos-variant-btn:hover,
-.gphotos-variant-btn[aria-pressed="true"],
 .build-variant-btn:hover,
 .build-variant-btn[aria-pressed="true"] {
   border-color: var(--accent);
   background: var(--accent-dim);
   color: var(--accent);
-}
-
-.gphotos-variant[hidden] {
-  display: none;
-}
-
-.app.gphotos-variant {
-  animation: none;
 }
 
 .experimental-name {
@@ -1538,81 +1518,35 @@ h1 .accent {
   overflow: visible;
 }
 
-.app[data-build-state="experimental"] .exp-menu > summary::after {
-  display: none;
-}
-
-.app[data-build-state="experimental"] .exp-menu .changelog-menu > summary {
-  display: block;
-  padding: 7px 10px;
-  font-size: 11px;
-}
-
-.app[data-build-state="experimental"]
-  .exp-menu
-  .changelog-menu
-  > summary::after {
-  content: "+";
-  display: block;
-  float: right;
-}
-
-.app[data-build-state="experimental"]
-  .exp-menu[open]
-  .changelog-menu[open]
-  > summary::after {
-  content: "-";
-}
-
 .app[data-build-state="experimental"] .exp-list {
   display: grid;
   padding: 0;
 }
 
 .app[data-build-state="experimental"] .exp-item {
-  border: 0;
-  padding: 0;
-  background: transparent;
+  border: 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
 }
 
 .app[data-build-state="experimental"] .exp-main {
   flex: 1 1 auto;
   width: 100%;
-}
-
-.app[data-build-state="experimental"] .exp-version {
-  margin-top: 9px;
-  font-family: var(--mono);
-  font-size: 12px;
-  color: var(--text-faint);
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px 16px;
-}
-
-.app[data-build-state="experimental"] .exp-version .v-num {
-  color: var(--text-dim);
-}
-
-.app[data-build-state="experimental"] .exp-version .f-built {
-  color: var(--text-faint);
+  gap: 0;
 }
 
 .app {
   border-bottom: 1px solid var(--line-soft);
   padding: 30px 0;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 20px;
   animation: app-enter 0.45s ease both;
-  transition:
-    background 0.15s,
-    padding 0.15s,
-    margin 0.15s;
 }
 
 .app .icon {
   flex-shrink: 0;
+  margin-top: 2px;
 }
 
 .app .app-info {
@@ -1624,14 +1558,10 @@ h1 .accent {
   flex-shrink: 0;
   width: 210px;
   justify-content: center;
+  align-self: flex-start;
+  margin-top: 2px;
 }
 
-.app:hover {
-  background: var(--bg-card-s);
-  margin: 0 -16px;
-  padding: 30px 16px;
-  border-radius: 12px;
-}
 
 .app:nth-child(2) {
   animation-delay: 0.06s;
@@ -1652,18 +1582,13 @@ h1 .accent {
 @keyframes app-enter {
   from {
     opacity: 0;
-    transform: translateY(8px);
   }
 
   to {
     opacity: 1;
-    transform: translateY(0);
   }
 }
 
-.app:hover + .app {
-  border-top: none;
-}
 
 .icon {
   width: 52px;
@@ -1673,7 +1598,7 @@ h1 .accent {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  border: 1px solid var(--line);
+  /* border: 1px solid var(--line); */
 }
 
 .icon svg {
@@ -1747,6 +1672,16 @@ h1 .accent {
   font-family: var(--mono);
   font-size: 11px;
   user-select: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+
+.changelog-menu summary:hover {
+  color: var(--text-dim);
 }
 
 .changelog-menu summary::-webkit-details-marker {
@@ -1755,9 +1690,10 @@ h1 .accent {
 
 .changelog-menu summary::after {
   content: "+";
-  float: right;
   color: var(--accent);
   font-size: 14px;
+  font-weight: 600;
+  line-height: 1;
 }
 
 .changelog-menu[open] summary {
@@ -1826,7 +1762,8 @@ h1 .accent {
 }
 
 /* Fixed version layout gap rule */
-.app-version {
+.app-version,
+.exp-version {
   margin-top: 9px;
   font-family: var(--mono);
   font-size: 12px;
@@ -1836,8 +1773,9 @@ h1 .accent {
   gap: 6px 16px;
 }
 
-.app-version .v-num {
-  color: var(--text-dim);
+.app-version .v-num,
+.exp-version .v-num {
+  color: var(--text-faint);
 }
 
 .app-version .p-num,
@@ -1845,11 +1783,13 @@ h1 .accent {
   color: var(--text-faint);
 }
 
-.app-version .f-built {
+.app-version .f-built,
+.exp-version .f-built {
   color: var(--text-faint);
 }
 
-.app-version .f-date {
+.app-version .f-date,
+.exp-version .f-date {
   color: var(--text-faint);
 }
 
@@ -1864,10 +1804,10 @@ h1 .accent {
   overflow: hidden;
 }
 
-.exp-menu summary {
+.exp-menu > summary {
   list-style: none;
   cursor: pointer;
-  display: flex;
+  display: none;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
@@ -1878,22 +1818,18 @@ h1 .accent {
   user-select: none;
 }
 
-.exp-menu summary {
+.exp-menu > summary::-webkit-details-marker {
   display: none;
 }
 
-.exp-menu summary::-webkit-details-marker {
-  display: none;
-}
-
-.exp-menu summary::after {
+.exp-menu > summary::after {
   content: "▼";
   font-size: 12px;
   color: var(--text-faint);
   transition: transform 0.15s ease;
 }
 
-.exp-menu[open] summary::after {
+.exp-menu[open] > summary::after {
   transform: rotate(180deg);
 }
 
@@ -1927,15 +1863,6 @@ h1 .accent {
   font-weight: 600;
 }
 
-.exp-version {
-  font-family: var(--mono);
-  font-size: 11px;
-  color: var(--text-faint);
-  display: flex;
-  gap: 6px 12px;
-  flex-wrap: wrap;
-}
-
 .exp-item .dl-btn {
   padding: 7px 10px;
   font-size: 12px;
@@ -1949,7 +1876,8 @@ h1 .accent {
   height: 13px;
 }
 
-.app-version .skel {
+.app-version .skel,
+.exp-version .skel {
   display: inline-block;
   width: 70px;
   height: 12px;
@@ -2039,11 +1967,17 @@ h1 .accent {
 
   .app {
     flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 16px;
   }
 
   .icon {
     width: 44px;
     height: 44px;
+  }
+
+  .app .icon {
+    margin-top: 0;
   }
 
   .icon svg,
@@ -2053,7 +1987,7 @@ h1 .accent {
   }
 
   .app .app-info {
-    flex-basis: calc(100% - 64px);
+    flex-basis: calc(100% - 60px);
   }
 
   .app .dl-btn {
@@ -2061,12 +1995,9 @@ h1 .accent {
     width: 100%;
     justify-content: center;
     padding: 11px 16px;
+    margin-top: 4px;
   }
 
-  .app:hover {
-    margin: 0 -16px;
-    padding: 24px 16px;
-  }
 
   .exp-item {
     flex-wrap: wrap;

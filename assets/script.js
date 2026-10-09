@@ -40,9 +40,6 @@ function showToast(message, duration = 4500) {
     link.hidden = true;
   });
 
-  const googlePhotosCards = document.querySelectorAll(".gphotos-variant");
-  const googlePhotosButtons = document.querySelectorAll(".gphotos-variant-btn");
-
   function setAppChangelogOpen(app, open) {
     app?.querySelectorAll(".changelog-menu").forEach((menu) => {
       menu.open = open;
@@ -56,34 +53,6 @@ function showToast(message, duration = 4500) {
         const menu = summary.parentElement;
         setAppChangelogOpen(app, !menu.open);
       });
-    });
-  });
-
-  function setGooglePhotosVariant(variant) {
-    const currentCard = [...googlePhotosCards].find((card) => !card.hidden);
-    const changelogOpen = currentCard
-      ? [...currentCard.querySelectorAll(".changelog-menu")].some(
-          (menu) => menu.open,
-        )
-      : false;
-    googlePhotosCards.forEach((card) => {
-      card.hidden = card.dataset.variant !== variant;
-    });
-    const nextCard = [...googlePhotosCards].find(
-      (card) => card.dataset.variant === variant,
-    );
-    setAppChangelogOpen(nextCard, changelogOpen);
-    googlePhotosButtons.forEach((button) => {
-      button.setAttribute(
-        "aria-pressed",
-        String(button.dataset.variant === variant),
-      );
-    });
-  }
-
-  googlePhotosButtons.forEach((button) => {
-    button.addEventListener("click", () => {
-      setGooglePhotosVariant(button.dataset.variant);
     });
   });
 
@@ -892,20 +861,26 @@ function showToast(message, duration = 4500) {
           builtEl.classList.remove("skel");
         }
 
-        if (card.classList.contains("gphotos-variant")) {
-          card.dataset.releaseTime = data.published_at || data.created_at || "";
-        }
+        card.dataset.releaseTime = data.published_at || data.created_at || "";
       });
     }
 
-    const latestGooglePhotosCard = [...googlePhotosCards]
-      .filter((card) => card.dataset.releaseTime)
-      .sort(
-        (a, b) =>
-          Date.parse(b.dataset.releaseTime) - Date.parse(a.dataset.releaseTime),
-      )[0];
-    if (latestGooglePhotosCard) {
-      setGooglePhotosVariant(latestGooglePhotosCard.dataset.variant);
+    const gphotosApp = document.querySelector(
+      '.app[data-asset-match="google-photos-rushi"]',
+    );
+    if (gphotosApp) {
+      const devancedItem = gphotosApp.querySelector(
+        '.exp-item[data-asset-match="gphotos-devanced"]',
+      );
+      if (
+        devancedItem &&
+        Date.parse(devancedItem.dataset.releaseTime || "") >
+          Date.parse(gphotosApp.dataset.releaseTime || "")
+      ) {
+        gphotosApp
+          .querySelector('.build-variant-btn[data-build="experimental"]')
+          ?.click();
+      }
     }
 
     if (rateLimitTriggered) {
