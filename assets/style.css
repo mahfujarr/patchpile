@@ -328,13 +328,13 @@ header {
   opacity: 0.5;
 }
 
-@media (max-width: 420px) {
+@media (max-width: 520px) {
   .header-row {
-    gap: 12px;
+    gap: 10px;
   }
 
   .header-right {
-    gap: 8px;
+    gap: 7px;
   }
 
   .theme-toggle,
@@ -345,36 +345,20 @@ header {
 
   .theme-toggle svg,
   .notif-btn svg {
-    width: 18px;
-    height: 18px;
+    width: 17px;
+    height: 17px;
   }
 
-  .gh-link {
-    padding: 7px 10px;
-    font-size: 12px;
-    gap: 5px;
-  }
-
-  .gh-link svg {
-    width: 14px;
-    height: 14px;
-  }
-
-  .brand .full-label {
-    display: none;
-  }
-
-  .brand .short-label {
-    display: inline;
-  }
-}
-
-@media (max-width: 360px) {
   .gh-link {
     width: 36px;
     height: 36px;
     justify-content: center;
     padding: 0;
+  }
+
+  .gh-link svg {
+    width: 16px;
+    height: 16px;
   }
 
   .gh-link span {
@@ -388,9 +372,31 @@ header {
     white-space: nowrap;
     border: 0;
   }
+
+  .brand .full-label {
+    display: none;
+  }
+
+  .brand .short-label {
+    display: inline;
+  }
 }
 
-@media (max-width: 768px) and (min-width: 421px) {
+@media (max-width: 360px) {
+  .brand .short-label {
+    display: none;
+  }
+
+  .header-row {
+    gap: 8px;
+  }
+
+  .header-right {
+    gap: 5px;
+  }
+}
+
+@media (max-width: 768px) and (min-width: 521px) {
   .header-right {
     gap: 9px;
   }
@@ -544,7 +550,7 @@ h1 .accent {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: 14px;
   user-select: none;
   transition: background 0.15s ease;
 }
@@ -567,6 +573,20 @@ h1 .accent {
   gap: 8px;
   min-width: 0;
   flex: 1 1 auto;
+  flex-wrap: wrap;
+}
+
+.whats-new-badge {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--accent);
+  background: var(--accent-dim);
+  border: 1px solid var(--accent);
+  padding: 2px 7px;
+  border-radius: 5px;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
 }
 
 .live-dot {
@@ -616,30 +636,6 @@ h1 .accent {
   flex-shrink: 0;
 }
 
-.whats-new-toolbar-right {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  flex-shrink: 0;
-}
-
-.whats-new-tag {
-  background: var(--accent-dim);
-  color: var(--accent);
-  border: 1px solid var(--accent);
-  padding: 3px 8px;
-  border-radius: 6px;
-  font-family: var(--mono);
-  font-size: 11.5px;
-  font-weight: 600;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
-.whats-new-tag:empty {
-  display: none;
-}
-
 .whats-new-toggle-icon {
   width: 28px;
   height: 28px;
@@ -653,6 +649,7 @@ h1 .accent {
   font-family: var(--mono);
   font-size: 16px;
   font-weight: 600;
+  flex-shrink: 0;
   margin-left: 2px;
   transition: all 0.15s ease;
 }
@@ -691,37 +688,15 @@ h1 .accent {
   }
 }
 
-.whats-new-toolbar {
+/* Recent Runs Switcher */
+.whats-new-runs-wrapper {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 8px;
   min-width: 0;
   max-width: 100%;
-  width: 100%;
 }
 
-.whats-new-gh-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  color: var(--text-dim);
-  border: 1px solid var(--line);
-  padding: 5px 11px;
-  border-radius: 6px;
-  background: var(--bg-raised);
-  font-family: var(--mono);
-  font-size: 12px;
-  transition: all 0.15s ease;
-}
-
-.whats-new-gh-link:hover {
-  color: var(--accent);
-  border-color: var(--accent);
-}
-
-/* Run Switcher Pills */
 .whats-new-runs {
   display: flex;
   gap: 8px;
@@ -740,7 +715,7 @@ h1 .accent {
 .wn-run-pill {
   font-family: var(--mono);
   font-size: 11px;
-  padding: 5px 11px;
+  padding: 6px 12px;
   border-radius: 6px;
   border: 1px solid var(--line);
   background: var(--bg-raised);
@@ -767,6 +742,94 @@ h1 .accent {
   background: var(--accent-dim);
   color: var(--accent);
   font-weight: 600;
+}
+
+/* Release Badges & Actions (Uncontained row) */
+.wn-release-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.wn-badges-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.whats-new-tag,
+.wn-release-tag {
+  background: var(--bg-card-s);
+  color: var(--text);
+  border: 1px solid var(--line);
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-family: var(--mono);
+  font-size: 11.5px;
+  font-weight: 600;
+  white-space: normal;
+  word-break: break-word;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.whats-new-tag:empty,
+.wn-release-tag:empty {
+  display: none;
+}
+
+.wn-patch-tag {
+  background: var(--accent-dim);
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-family: var(--mono);
+  font-size: 11.5px;
+  font-weight: 600;
+  white-space: normal;
+  word-break: break-word;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  max-width: none;
+}
+
+.wn-patch-tag[hidden] {
+  display: none !important;
+}
+
+.wn-release-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.whats-new-gh-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-dim);
+  border: 1px solid var(--line);
+  padding: 6px 12px;
+  border-radius: 7px;
+  background: var(--bg-raised);
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 500;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.whats-new-gh-link:hover {
+  color: var(--accent);
+  border-color: var(--accent);
 }
 
 /* Changed Apps Cards Grid */
@@ -836,7 +899,7 @@ h1 .accent {
 .wn-app-info {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
   min-width: 0;
 }
 
@@ -860,7 +923,32 @@ h1 .accent {
 }
 
 .wn-app-meta .wn-ver {
+  color: var(--text);
+  font-weight: 600;
+  background: var(--bg-card-s);
+  border: 1px solid var(--line);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.wn-app-meta .wn-arch {
   color: var(--text-dim);
+}
+
+.wn-app-meta .wn-size {
+  color: var(--text-dim);
+  background: var(--bg-card-s);
+  border: 1px solid var(--line-soft);
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+.wn-app-meta .wn-patch-chip {
+  color: var(--accent);
+  background: var(--accent-dim);
+  border: 1px solid var(--accent);
+  padding: 1px 6px;
+  border-radius: 4px;
   font-weight: 600;
 }
 
@@ -919,15 +1007,6 @@ h1 .accent {
   flex-wrap: wrap;
   border-bottom: 1px solid var(--line-soft);
   padding-bottom: 8px;
-}
-
-.wn-patch-tag {
-  font-family: var(--mono);
-  font-size: 11px;
-  color: var(--accent);
-  background: var(--accent-dim);
-  padding: 2px 8px;
-  border-radius: 4px;
 }
 
 .whats-new-notes {
@@ -1021,35 +1100,47 @@ h1 .accent {
 .wn-upstream-link {
   font-family: var(--mono);
   font-size: 11.5px;
-  color: var(--text-faint);
+  color: var(--accent);
   text-decoration: none;
-  transition: color 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: opacity 0.15s ease;
 }
 
 .wn-upstream-link:hover {
-  color: var(--accent);
   text-decoration: underline;
 }
 
+.wn-upstream-link[hidden] {
+  display: none !important;
+}
+
+/* Mobile Responsive Redesign for What's New */
 @media (max-width: 600px) {
   .whats-new {
     margin-bottom: 32px;
+    border-radius: 14px;
   }
 
   .whats-new-summary {
-    padding: 12px 14px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+    padding: 13px 14px;
     gap: 10px;
+    min-height: 50px;
   }
 
   .whats-new-summary-left {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 7px;
     min-width: 0;
     flex: 1 1 auto;
+    flex-wrap: wrap;
+  }
+
+  .whats-new-badge {
+    font-size: 10px;
+    padding: 1.5px 6px;
   }
 
   .whats-new-brand {
@@ -1061,25 +1152,11 @@ h1 .accent {
     color: var(--text-faint);
   }
 
-  .whats-new-toolbar-right {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    width: 100%;
-  }
-
-  .whats-new-tag {
-    font-size: 10.5px;
-    padding: 2px 7px;
-    border-radius: 5px;
-  }
-
   .whats-new-toggle-icon {
-    width: 26px;
-    height: 26px;
+    width: 28px;
+    height: 28px;
     font-size: 15px;
-    border-radius: 6px;
+    border-radius: 7px;
     flex-shrink: 0;
   }
 
@@ -1090,14 +1167,8 @@ h1 .accent {
     max-width: 100%;
   }
 
-  .whats-new-toolbar {
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    gap: 10px;
-    min-width: 0;
-    max-width: 100%;
-    width: 100%;
+  .whats-new-runs-wrapper {
+    gap: 6px;
   }
 
   .whats-new-runs {
@@ -1130,12 +1201,44 @@ h1 .accent {
     -webkit-tap-highlight-color: transparent;
   }
 
+  /* Uncontained release row on mobile */
+  .wn-release-banner {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    flex-wrap: wrap;
+    padding: 0;
+  }
+
+  .wn-badges-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    min-width: 0;
+  }
+
+  .whats-new-tag,
+  .wn-release-tag {
+    font-size: 11px;
+    padding: 3px 8px;
+  }
+
+  /* Patch tag: fully visible, never clipped, never hidden behind ellipsis */
+  .wn-patch-tag {
+    font-size: 11px;
+    padding: 3px 8px;
+    max-width: 100%;
+    white-space: normal;
+    word-break: break-word;
+  }
+
   .whats-new-gh-link {
-    width: 100%;
-    justify-content: center;
-    padding: 8px 12px;
+    padding: 5px 10px;
     font-size: 11.5px;
-    min-height: 34px;
+    min-height: 32px;
     touch-action: manipulation;
   }
 
@@ -1181,9 +1284,9 @@ h1 .accent {
   .wn-app-btn {
     width: 100%;
     justify-content: center;
-    min-height: 40px;
-    padding: 9px 14px;
-    font-size: 12.5px;
+    min-height: 42px;
+    padding: 10px 14px;
+    font-size: 13px;
     border-radius: 8px;
     touch-action: manipulation;
   }
@@ -1200,15 +1303,6 @@ h1 .accent {
     justify-content: space-between;
     gap: 8px;
     padding-bottom: 6px;
-  }
-
-  .wn-patch-tag {
-    font-size: 10.5px;
-    padding: 1.5px 6px;
-    max-width: 55%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
   }
 
   .whats-new-notes {
@@ -1251,8 +1345,8 @@ h1 .accent {
   }
 
   .wn-expand-btn {
-    font-size: 11px;
-    min-height: 32px;
+    font-size: 11.5px;
+    min-height: 36px;
     padding: 4px 0;
     touch-action: manipulation;
   }
@@ -1268,13 +1362,14 @@ h1 .accent {
 @media (max-width: 360px) {
   .whats-new-summary {
     padding: 10px 12px;
-    gap: 8px;
+    gap: 6px;
   }
 
   .whats-new-body {
     padding: 12px 10px;
     gap: 12px;
   }
+
 
   .wn-app-item {
     padding: 10px 12px;
@@ -1912,6 +2007,36 @@ h1 .accent {
 }
 
 @media (max-width: 600px) {
+  .wrap {
+    padding: 0 16px;
+  }
+
+  .hero {
+    padding: 38px 0 24px;
+  }
+
+  .eyebrow {
+    font-size: 11px;
+    margin-bottom: 12px;
+  }
+
+  h1 {
+    font-size: clamp(28px, 7.5vw, 40px);
+    line-height: 1.15;
+  }
+
+  .hero p {
+    margin-top: 12px;
+    font-size: 14.5px;
+    line-height: 1.55;
+  }
+
+  .hero-meta {
+    margin-top: 18px;
+    gap: 8px 10px;
+    font-size: 11.5px;
+  }
+
   .app {
     flex-wrap: wrap;
   }
@@ -1921,11 +2046,7 @@ h1 .accent {
     height: 44px;
   }
 
-  .icon svg {
-    width: 32px;
-    height: 32px;
-  }
-
+  .icon svg,
   .icon img {
     width: 32px;
     height: 32px;

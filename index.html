@@ -106,6 +106,7 @@
       <summary class="whats-new-summary">
         <div class="whats-new-summary-left">
           <span class="live-dot" aria-hidden="true"></span>
+          <span class="whats-new-badge">What's New</span>
           <span class="whats-new-brand" id="wn-summary-brand">Checking builds…</span>
           <span class="whats-new-sep" id="wn-summary-sep" aria-hidden="true" hidden>·</span>
           <span class="whats-new-time" id="wn-release-time"></span>
@@ -114,19 +115,24 @@
       </summary>
 
       <div class="whats-new-body">
-        <div class="whats-new-toolbar">
+        <div class="whats-new-runs-wrapper">
+          <div class="wn-subheading">Recent Builds</div>
           <div class="whats-new-runs" id="wn-runs-bar" role="tablist" aria-label="Recent workflow runs"></div>
-          <div class="whats-new-toolbar-right">
-            <span class="whats-new-tag" id="wn-release-tag"></span>
-            <a class="whats-new-gh-link" id="wn-release-link" href="https://github.com/mahfujarr/patchpile/releases"
-              target="_blank" rel="noopener" title="View release on GitHub">
-              <span>GitHub release</span>
-              <svg viewBox="0 0 16 16" fill="currentColor" width="12" height="12">
-                <path
-                  d="M3.75 2h8.5a.75.75 0 0 1 .75.75v8.5a.75.75 0 0 1-1.5 0V4.56L2.53 13.53a.75.75 0 0 1-1.06-1.06L10.44 3.5H3.75a.75.75 0 0 1 0-1.5Z" />
-              </svg>
-            </a>
+        </div>
+
+        <div class="wn-release-banner">
+          <div class="wn-badges-row">
+            <span class="whats-new-tag wn-release-tag" id="wn-release-tag"></span>
+            <span class="wn-patch-tag" id="wn-patch-tag" hidden></span>
           </div>
+          <a class="whats-new-gh-link" id="wn-release-link" href="https://github.com/mahfujarr/patchpile/releases"
+            target="_blank" rel="noopener" title="View release on GitHub">
+            <span>GitHub Release</span>
+            <svg viewBox="0 0 16 16" fill="currentColor" width="12" height="12">
+              <path
+                d="M3.75 2h8.5a.75.75 0 0 1 .75.75v8.5a.75.75 0 0 1-1.5 0V4.56L2.53 13.53a.75.75 0 0 1-1.06-1.06L10.44 3.5H3.75a.75.75 0 0 1 0-1.5Z" />
+            </svg>
+          </a>
         </div>
 
         <div class="whats-new-apps-card">
@@ -138,8 +144,14 @@
 
         <div class="whats-new-changelog-card" id="wn-changelog-card">
           <div class="wn-changelog-header">
-            <div class="wn-subheading">Changelog &amp; Upstream Patches</div>
-            <span class="wn-patch-tag" id="wn-patch-tag" hidden></span>
+            <div class="wn-subheading">Changelog &amp; Upstream Notes</div>
+            <a class="wn-upstream-link" id="wn-upstream-link" href="#" target="_blank" rel="noopener" hidden>
+              <span>Upstream changelog</span>
+              <svg viewBox="0 0 16 16" fill="currentColor" width="11" height="11">
+                <path
+                  d="M3.75 2h8.5a.75.75 0 0 1 .75.75v8.5a.75.75 0 0 1-1.5 0V4.56L2.53 13.53a.75.75 0 0 1-1.06-1.06L10.44 3.5H3.75a.75.75 0 0 1 0-1.5Z" />
+              </svg>
+            </a>
           </div>
           <div class="whats-new-notes" id="wn-changelog-content">
             Loading changelog…
@@ -148,7 +160,6 @@
             <button type="button" class="wn-expand-btn" id="wn-expand-btn" aria-expanded="false" style="display:none;">
               Show more
             </button>
-            <a class="wn-upstream-link" id="wn-upstream-link" href="#" target="_blank" rel="noopener" hidden>Upstream changelog ↗</a>
           </div>
         </div>
       </div>
