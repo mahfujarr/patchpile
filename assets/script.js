@@ -86,7 +86,9 @@ function showToast(message, duration = 4500) {
 
   setTimeout(() => {
     const el = document.getElementById("last-sync-date");
-    if (el && el.textContent === "checking…") el.textContent = "see GitHub";
+    if (el && (el.textContent === "checking…" || !el.textContent)) {
+      el.textContent = "see GitHub";
+    }
   }, 6000);
 
   function formatBytes(bytes) {
@@ -630,31 +632,61 @@ function showToast(message, duration = 4500) {
         if (expandBtn) {
           expandBtn.textContent = "Show more";
           expandBtn.setAttribute("aria-expanded", "false");
-          if (section.open) {
-            setTimeout(() => {
-              if (changelogContentEl.scrollHeight > 200) {
-                expandBtn.style.display = "inline-flex";
-              } else {
-                expandBtn.style.display = "none";
-              }
-            }, 60);
-          } else {
-            expandBtn.style.display = "none";
-          }
+        }
+        if (section.open) {
+          setTimeout(updateExpandBtnVisibility, 60);
+          setTimeout(updateExpandBtnVisibility, 200);
+        } else {
+          updateExpandBtnVisibility();
         }
       }
     }
 
-    // Recalculate changelog expand button when details unfolds
+    function updateExpandBtnVisibility() {
+      if (!changelogContentEl || !expandBtn) return;
+      const footer = document.getElementById("wn-changelog-footer");
+      if (!section.open) {
+        expandBtn.style.display = "none";
+        if (footer) footer.style.display = "none";
+        return;
+      }
+
+      const isExpanded = changelogContentEl.classList.contains("expanded");
+      if (isExpanded) {
+        expandBtn.style.display = "inline-flex";
+        expandBtn.textContent = "Show less";
+        expandBtn.setAttribute("aria-expanded", "true");
+        if (footer) footer.style.display = "flex";
+        return;
+      }
+
+      // Check if changelog text actually overflows its visible height
+      const isOverflowing =
+        changelogContentEl.scrollHeight > changelogContentEl.clientHeight + 4;
+      if (isOverflowing) {
+        expandBtn.style.display = "inline-flex";
+        expandBtn.textContent = "Show more";
+        expandBtn.setAttribute("aria-expanded", "false");
+        if (footer) footer.style.display = "flex";
+      } else {
+        expandBtn.style.display = "none";
+        if (footer) footer.style.display = "none";
+      }
+    }
+
+    // Recalculate changelog expand button when details unfolds or window resizes
     section.addEventListener("toggle", () => {
-      if (section.open && changelogContentEl && expandBtn) {
-        setTimeout(() => {
-          if (changelogContentEl.scrollHeight > 200) {
-            expandBtn.style.display = "inline-flex";
-          } else {
-            expandBtn.style.display = "none";
-          }
-        }, 60);
+      if (section.open) {
+        setTimeout(updateExpandBtnVisibility, 60);
+        setTimeout(updateExpandBtnVisibility, 200);
+      } else {
+        updateExpandBtnVisibility();
+      }
+    });
+
+    window.addEventListener("resize", () => {
+      if (section.open) {
+        updateExpandBtnVisibility();
       }
     });
 
@@ -669,7 +701,7 @@ function showToast(message, duration = 4500) {
         pill.setAttribute("aria-selected", String(index === 0));
 
         if (index === 0) {
-          pill.innerHTML = `<span class="live-dot" style="width:5px;height:5px;"></span> Latest: ${rel.tag_name}`;
+          pill.innerHTML = `<span class="live-dot" style="width:5px;height:5px;"></span> ${rel.tag_name}`;
         } else {
           pill.textContent = `${rel.tag_name}`;
         }
@@ -755,17 +787,99 @@ function showToast(message, duration = 4500) {
     }
   })();
 
-  // --- Independent Global Actions Timeline Execution ---
-  (async () => {
-    try {
-      const manifest = await getLocalManifest();
-      const lastSync = manifest?.actions?.last_sync;
-      if (lastSync) {
-        document.getElementById("last-sync-date").textContent =
-          formatBuiltAt(lastSync);
+  // --- Independent Global Actions Timeline Execution & Next Check Timer ---
+  const CI_INTERVAL_MS = 15 * 60 * 1000;
+  let nextCheckTimerInterval = null;
+  let isFetchingCiRun = false;
+  let lastKnownCiRun = null;
+
+  function startNextCheckCountdown(lastRunIso) {
+    const timerEl = document.getElementById("next-check-timer");
+    if (!timerEl) return;
+
+    if (nextCheckTimerInterval) {
+      clearInterval(nextCheckTimerInterval);
+      nextCheckTimerInterval = null;
+    }
+
+    if (lastRunIso) {
+      lastKnownCiRun = lastRunIso;
+    }
+
+    const lastRunMs = lastKnownCiRun ? new Date(lastKnownCiRun).getTime() : NaN;
+
+    function getNextCheckTarget() {
+      const now = Date.now();
+      if (!isNaN(lastRunMs) && lastRunMs > 0) {
+        const elapsed = now - lastRunMs;
+        if (elapsed < 0) return lastRunMs + CI_INTERVAL_MS;
+        const cycles = Math.floor(elapsed / CI_INTERVAL_MS) + 1;
+        return lastRunMs + cycles * CI_INTERVAL_MS;
       }
-    } catch (e) {}
-  })();
+      const d = new Date(now);
+      const nextMinute = (Math.floor(d.getMinutes() / 15) + 1) * 15;
+      d.setMinutes(nextMinute, 0, 0);
+      return d.getTime();
+    }
+
+    let targetMs = getNextCheckTarget();
+
+    function updateTimer() {
+      const remainingMs = targetMs - Date.now();
+      if (remainingMs <= 0) {
+        timerEl.textContent = "checking…";
+        targetMs = Date.now() + 15000;
+        fetchLatestCiRun();
+        return;
+      }
+      const totalSec = Math.floor(remainingMs / 1000);
+      const m = Math.floor(totalSec / 60);
+      const s = totalSec % 60;
+      timerEl.textContent = `${m}m ${s < 10 ? "0" : ""}${s}s`;
+    }
+
+    updateTimer();
+    nextCheckTimerInterval = setInterval(updateTimer, 1000);
+  }
+
+  async function fetchLatestCiRun() {
+    if (isFetchingCiRun) return;
+    isFetchingCiRun = true;
+    const el = document.getElementById("last-sync-date");
+
+    try {
+      const res = await fetch(
+        "https://api.github.com/repos/mahfujarr/patchpile/actions/workflows/ci.yml/runs?per_page=1",
+      );
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      const latestRun = data?.workflow_runs?.[0];
+      const runDate = latestRun?.updated_at || latestRun?.created_at;
+      if (!runDate) throw new Error("No CI runs found");
+      if (el) el.textContent = formatBuiltAt(runDate);
+      startNextCheckCountdown(runDate);
+    } catch (_) {
+      try {
+        const manifest = await getLocalManifest();
+        const lastSync = manifest?.actions?.last_sync;
+        if (lastSync) {
+          if (el) el.textContent = formatBuiltAt(lastSync);
+          startNextCheckCountdown(lastSync);
+          return;
+        }
+      } catch (e) {}
+
+      if (el && (el.textContent === "checking…" || !el.textContent)) {
+        el.textContent = "see GitHub";
+      }
+      startNextCheckCountdown(null);
+    } finally {
+      isFetchingCiRun = false;
+    }
+  }
+
+  startNextCheckCountdown();
+  fetchLatestCiRun();
 
   // --- Application Release Mapping Engine ---
   (async () => {
