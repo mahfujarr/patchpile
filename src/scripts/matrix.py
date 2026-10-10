@@ -15,7 +15,7 @@
 import json  # noqa: I001
 import os
 import sys
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any
 
 from src.core.config import CONFIG_PATH, AppEntry, load_toml, parse_app_entries, parse_config
@@ -36,8 +36,20 @@ def _fetch_latest_release(source: str, net: NetworkManager, version: str = "late
         changelog_text = str(upstream_rel.get("description") or "")
         upstream_date = str(upstream_rel.get("released_at") or "")
     elif version == "dev":
-        releases: list[dict[str, Any]] = json.loads(net.get(f"https://api.github.com/repos/{clean_src}/releases?per_page=1", headers=net.gh_headers))
-        upstream_rel = releases[0] if releases else {}
+        try:
+            releases_raw = net.get(f"https://api.github.com/repos/{clean_src}/releases?per_page=50", headers=net.gh_headers)
+            releases: list[dict[str, Any]] = [r for r in json.loads(releases_raw) if not r.get("draft")]
+            if releases:
+                releases.sort(
+                    key=lambda r: datetime.fromisoformat(r["published_at"]) if r.get("published_at") else (datetime.fromisoformat(r["created_at"]) if r.get("created_at") else datetime.min.replace(tzinfo=timezone.utc)),
+                    reverse=True,
+                )
+                upstream_rel = releases[0]
+            else:
+                upstream_rel = {}
+        except Exception as exc:
+            epr(f"Failed to fetch dev releases for '{clean_src}': {exc}")
+            upstream_rel = {}
         changelog_text = str(upstream_rel.get("body") or "")
         upstream_date = str(upstream_rel.get("published_at") or "")
     else:
@@ -54,8 +66,13 @@ def _fetch_our_releases(repo: str, net: NetworkManager) -> dict[str, str]:
         for rel in releases:
             tag = str(rel.get("tag_name") or "")
             brand = tag.split("-", 1)[1] if "-" in tag else ""
-            if brand and brand not in our_releases_by_brand:
-                our_releases_by_brand[brand] = str(rel.get("published_at") or "")
+            if brand:
+                pub_date = str(rel.get("published_at") or "")
+                if pub_date:
+                    if brand not in our_releases_by_brand:
+                        our_releases_by_brand[brand] = pub_date
+                    elif datetime.fromisoformat(pub_date) > datetime.fromisoformat(our_releases_by_brand[brand]):
+                        our_releases_by_brand[brand] = pub_date
     except Exception as exc:
         epr(f"Failed to fetch our releases: {exc}")
         our_releases_by_brand = {}
@@ -91,7 +108,7 @@ def get_matrix(source: str) -> None:
                 our_releases_by_brand = _fetch_our_releases(repo, net)
                 if our_releases_by_brand.get(source_lower, ""):
                     try:
-                        changelog_text, _ = _fetch_latest_release(patches_source, net)
+                        changelog_text, _ = _fetch_latest_release(patches_source, net, version="dev" if is_prerelease else "latest")
                     except Exception as exc:
                         epr(f"Failed to fetch changelog for '{patches_source}': {exc}")
 
