@@ -1,7 +1,7 @@
 name: CI
 on:
-  schedule:
-    - cron: '23 00,06,12,18 * * *'
+  # schedule:
+  #   - cron: '23 00,06,12,18 * * *'
   repository_dispatch:
     types: [cron_ping, external_cron, upstream_release]
   workflow_dispatch:

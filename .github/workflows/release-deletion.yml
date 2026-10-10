@@ -1,16 +1,8 @@
 name: Delete old releases
 
 on:
-  schedule:
-    - cron: "0 0 * * 6"
   workflow_dispatch:
   workflow_call:
-  workflow_run:
-    workflows:
-      - "Build APKs"
-      - "CI"
-    types:
-      - completed
 
 permissions:
   contents: write
