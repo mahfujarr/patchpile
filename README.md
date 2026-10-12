@@ -41,6 +41,73 @@ Current patch-source mapping:
 
 The configuration also applies personal branding, icons, package-name options, and other build-specific settings.
 
+### Auto-Updating via Obtainium
+
+You can automatically track and update all patched apps directly on your Android device using [Obtainium](https://github.com/ImranR98/Obtainium).
+
+Click or tap any badge below from your Android device to add the app variant directly to Obtainium with a single click:
+
+| Application | Build Variant | Patch Source | Add to Obtainium |
+| :--- | :--- | :--- | :--- |
+| **YouTube** | Stable | `morphe` | [![Add to Obtainium](https://img.shields.io/badge/Add%20to-Obtainium-4A154B?style=for-the-badge&logo=android&logoColor=white)](https://mahfujarr.me/patchpile?obtainium=youtube-stable) |
+| **YouTube** | Experimental | `morphe-dev` | [![Add to Obtainium](https://img.shields.io/badge/Add%20to-Obtainium-4A154B?style=for-the-badge&logo=android&logoColor=white)](https://mahfujarr.me/patchpile?obtainium=youtube-experimental) |
+| **YouTube Music** | Stable | `morphe` | [![Add to Obtainium](https://img.shields.io/badge/Add%20to-Obtainium-4A154B?style=for-the-badge&logo=android&logoColor=white)](https://mahfujarr.me/patchpile?obtainium=yt-music-stable) |
+| **YouTube Music** | Experimental | `morphe-dev` | [![Add to Obtainium](https://img.shields.io/badge/Add%20to-Obtainium-4A154B?style=for-the-badge&logo=android&logoColor=white)](https://mahfujarr.me/patchpile?obtainium=yt-music-experimental) |
+| **Instagram** | Stable | `piko` | [![Add to Obtainium](https://img.shields.io/badge/Add%20to-Obtainium-4A154B?style=for-the-badge&logo=android&logoColor=white)](https://mahfujarr.me/patchpile?obtainium=instagram-stable) |
+| **Instagram** | Experimental | `piko-dev` | [![Add to Obtainium](https://img.shields.io/badge/Add%20to-Obtainium-4A154B?style=for-the-badge&logo=android&logoColor=white)](https://mahfujarr.me/patchpile?obtainium=instagram-experimental) |
+| **Google Photos** | Unlimited Backup | `rushi` | [![Add to Obtainium](https://img.shields.io/badge/Add%20to-Obtainium-4A154B?style=for-the-badge&logo=android&logoColor=white)](https://mahfujarr.me/patchpile?obtainium=photos-rushi) |
+| **Google Photos** | De-Vanced | `devanced` | [![Add to Obtainium](https://img.shields.io/badge/Add%20to-Obtainium-4A154B?style=for-the-badge&logo=android&logoColor=white)](https://mahfujarr.me/patchpile?obtainium=photos-devanced) |
+
+> [!TIP]
+> Tapping a badge routes via [mahfujarr.me/patchpile](https://mahfujarr.me/patchpile) to automatically trigger the `obtainium://app/...` deep link on your Android device.
+
+<details>
+<summary><b>📋 Manual Configuration JSONs (Click to expand)</b></summary>
+
+If you prefer importing configurations manually into Obtainium, copy the corresponding JSON below:
+
+**YouTube (Stable)**
+```json
+{"id":"com.google.android.youtube","url":"https://github.com/mahfujarr/patchpile","author":"mahfujarr","name":"YouTube (Stable)","additionalSettings":"{\"includePrereleases\":false,\"fallbackToOlderReleases\":true,\"filterReleaseTitlesByRegEx\":\"-morphe$\",\"apkFilterRegEx\":\"youtube.*arm64\",\"autoApkFilterByArch\":true}"}
+```
+
+**YouTube (Experimental)**
+```json
+{"id":"com.google.android.youtube","url":"https://github.com/mahfujarr/patchpile","author":"mahfujarr","name":"YouTube (Experimental)","additionalSettings":"{\"includePrereleases\":true,\"fallbackToOlderReleases\":true,\"filterReleaseTitlesByRegEx\":\"-morphe-dev$\",\"apkFilterRegEx\":\"youtube.*arm64\",\"autoApkFilterByArch\":true}"}
+```
+
+**YT Music (Stable)**
+```json
+{"id":"com.google.android.apps.youtube.music","url":"https://github.com/mahfujarr/patchpile","author":"mahfujarr","name":"YT Music (Stable)","additionalSettings":"{\"includePrereleases\":false,\"fallbackToOlderReleases\":true,\"filterReleaseTitlesByRegEx\":\"-morphe$\",\"apkFilterRegEx\":\"yt-music.*arm64\",\"autoApkFilterByArch\":true}"}
+```
+
+**YT Music (Experimental)**
+```json
+{"id":"com.google.android.apps.youtube.music","url":"https://github.com/mahfujarr/patchpile","author":"mahfujarr","name":"YT Music (Experimental)","additionalSettings":"{\"includePrereleases\":true,\"fallbackToOlderReleases\":true,\"filterReleaseTitlesByRegEx\":\"-morphe-dev$\",\"apkFilterRegEx\":\"yt-music.*arm64\",\"autoApkFilterByArch\":true}"}
+```
+
+**Instagram (Stable)**
+```json
+{"id":"com.instagram.android","url":"https://github.com/mahfujarr/patchpile","author":"mahfujarr","name":"Instagram (Stable)","additionalSettings":"{\"includePrereleases\":false,\"fallbackToOlderReleases\":true,\"filterReleaseTitlesByRegEx\":\"-piko$\",\"apkFilterRegEx\":\"instagram.*arm64\",\"autoApkFilterByArch\":true}"}
+```
+
+**Instagram (Experimental)**
+```json
+{"id":"com.instagram.android","url":"https://github.com/mahfujarr/patchpile","author":"mahfujarr","name":"Instagram (Experimental)","additionalSettings":"{\"includePrereleases\":true,\"fallbackToOlderReleases\":true,\"filterReleaseTitlesByRegEx\":\"-piko-dev$\",\"apkFilterRegEx\":\"instagram.*arm64\",\"autoApkFilterByArch\":true}"}
+```
+
+**Google Photos (Rushi)**
+```json
+{"id":"com.google.android.apps.photos","url":"https://github.com/mahfujarr/patchpile","author":"mahfujarr","name":"Google Photos (Rushi)","additionalSettings":"{\"includePrereleases\":false,\"fallbackToOlderReleases\":true,\"filterReleaseTitlesByRegEx\":\"-rushi$\",\"apkFilterRegEx\":\"google-photos.*arm64\",\"autoApkFilterByArch\":true}"}
+```
+
+**Google Photos (De-Vanced)**
+```json
+{"id":"com.google.android.apps.photos","url":"https://github.com/mahfujarr/patchpile","author":"mahfujarr","name":"Google Photos (De-Vanced)","additionalSettings":"{\"includePrereleases\":false,\"fallbackToOlderReleases\":true,\"filterReleaseTitlesByRegEx\":\"-devanced$\",\"apkFilterRegEx\":\"gphotos.*arm64\",\"autoApkFilterByArch\":true}"}
+```
+
+</details>
+
 ### Purpose
 
 This repository exists solely to build APKs for my own personal use.
