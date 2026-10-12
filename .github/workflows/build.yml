@@ -65,18 +65,33 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          VER="$(date +%y.%m.%d)-${{ inputs.patch_source }}"
+          TODAY="$(date +%y.%m.%d)"
+          SOURCE="${{ inputs.patch_source }}"
+
+          MAX_REV=0
+          TAGS=$(gh release list --repo "$GITHUB_REPOSITORY" --limit 100 --json tagName --jq '.[].tagName' 2>/dev/null || true)
+          for TAG in $TAGS; do
+            if [[ "$TAG" =~ ^${TODAY}\.([0-9]+)-${SOURCE}$ ]]; then
+              REV=$((10#${BASH_REMATCH[1]}))
+              if (( REV > MAX_REV )); then
+                MAX_REV=$REV
+              fi
+            elif [[ "$TAG" == "${TODAY}-${SOURCE}" ]]; then
+              if (( 1 > MAX_REV )); then
+                MAX_REV=1
+              fi
+            fi
+          done
+
+          NEXT_REV=$((MAX_REV + 1))
+          VER="$(printf "%s.%02d-%s" "$TODAY" "$NEXT_REV" "$SOURCE")"
           echo "version=${VER}" >> "$GITHUB_OUTPUT"
 
-          if gh release view "$VER" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            gh release edit "$VER" --draft --repo "$GITHUB_REPOSITORY"
-          else
-            gh release create "$VER" \
-              --draft \
-              --title "$VER" \
-              --notes "" \
-              --repo "$GITHUB_REPOSITORY"
-          fi
+          gh release create "$VER" \
+            --draft \
+            --title "$VER" \
+            --notes "" \
+            --repo "$GITHUB_REPOSITORY"
 
       - name: Set matrix based on patch source
         id: set-matrix
@@ -150,8 +165,6 @@ jobs:
             --clobber \
             --repo "$GITHUB_REPOSITORY"
 
-          uv run python -m src.scripts.release_assets replace-assets "$TAG" "${apks[@]}"
-
       - name: Upload build log to draft release
         if: always()
         env:
@@ -205,14 +218,6 @@ jobs:
 
           echo "has_apks=${has}" >> "$GITHUB_OUTPUT"
 
-      - name: Prune duplicate APK assets in release
-        if: steps.check.outputs.has_apks == 'true'
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG: ${{ needs.prepare.outputs.version }}
-        run: |
-          uv run python -m src.scripts.release_assets prune-release "$TAG"
-
       - name: Download logs from draft release
         if: steps.check.outputs.has_apks == 'true'
         env:
@@ -230,17 +235,7 @@ jobs:
             --repo "$GITHUB_REPOSITORY" \
             --json assets \
             --jq '.assets[] | select(.name | startswith("build-")) | .apiUrl' |
-            xargs -I{} gh api --method DELETE "{}" || true
-
-          gh release view "$TAG" \
-            --repo "$GITHUB_REPOSITORY" \
-            --json body \
-            --jq .body > existing.md || true
-
-          gh release view "$TAG" \
-            --repo "$GITHUB_REPOSITORY" \
-            --json assets \
-            --jq '[.assets[].name | select(endswith(".apk"))]' > current_assets.json || true
+            xargs -I{} gh api --method DELETE "{}"
 
       - name: Combine logs and finalize release
         if: steps.check.outputs.has_apks == 'true'
@@ -249,7 +244,7 @@ jobs:
           TAG: ${{ needs.prepare.outputs.version }}
           PRERELEASE: ${{ needs.prepare.outputs.prerelease }}
         run: |
-          uv run python -m src.scripts.logs combine-logs logs existing.md current_assets.json |
+          uv run python -m src.scripts.logs combine-logs logs |
             sed "s/{TAG}/$TAG/g" > final.md
 
           if [ "$PRERELEASE" = "true" ]; then

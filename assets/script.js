@@ -246,17 +246,12 @@ function showToast(message, duration = 4500) {
     if (!release) return null;
     const assets = release.assets || [];
     const normalized = String(match || "").toLowerCase();
-    const matching = assets.filter((a) => {
-      const name = String(a.name || "").toLowerCase();
-      return name.endsWith(".apk") && name.includes(normalized);
-    });
-    if (matching.length === 0) return null;
-    if (matching.length === 1) return matching[0];
-    return matching.sort((a, b) => {
-      const aTime = Date.parse(a.updated_at || a.created_at || 0);
-      const bTime = Date.parse(b.updated_at || b.created_at || 0);
-      return bTime - aTime;
-    })[0];
+    return (
+      assets.find((a) => {
+        const name = String(a.name || "").toLowerCase();
+        return name.endsWith(".apk") && name.includes(normalized);
+      }) || null
+    );
   }
 
   function updateChangelog(card, upstreamRelease) {
@@ -420,13 +415,7 @@ function showToast(message, duration = 4500) {
     }
 
     if (apps.length === 0 && Array.isArray(release.assets)) {
-      const seenApps = new Set();
-      const sortedAssets = [...release.assets].sort((a, b) => {
-        const at = Date.parse(a.updated_at || a.created_at || 0);
-        const bt = Date.parse(b.updated_at || b.created_at || 0);
-        return bt - at;
-      });
-      for (const asset of sortedAssets) {
+      for (const asset of release.assets) {
         if (!asset.name.endsWith(".apk")) continue;
         const vMatch = asset.name.match(/v?([\d.]+)-arm64/);
         const version = vMatch ? vMatch[1] : "";
@@ -446,10 +435,6 @@ function showToast(message, duration = 4500) {
           rawName = "Google Photos";
           appType = "gph";
         }
-
-        const appKey = `${rawName}::arm64-v8a`;
-        if (seenApps.has(appKey)) continue;
-        seenApps.add(appKey);
 
         apps.push({
           name: rawName,
