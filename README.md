@@ -68,22 +68,22 @@ If you prefer importing configurations manually into Obtainium, copy the corresp
 
 **YouTube (Stable)**
 ```json
-{"id":"com.google.android.youtube","url":"https://github.com/mahfujarr/patchpile","author":"mahfujarr","name":"YouTube (Stable)","additionalSettings":"{\"includePrereleases\":false,\"fallbackToOlderReleases\":true,\"filterReleaseTitlesByRegEx\":\"-morphe$\",\"apkFilterRegEx\":\"youtube.*arm64\",\"autoApkFilterByArch\":true}"}
+{"id":"app.morphe.android.youtube","url":"https://github.com/mahfujarr/patchpile","author":"mahfujarr","name":"YouTube (Stable)","additionalSettings":"{\"includePrereleases\":false,\"fallbackToOlderReleases\":true,\"filterReleaseTitlesByRegEx\":\"-morphe$\",\"apkFilterRegEx\":\"youtube.*arm64\",\"autoApkFilterByArch\":true}"}
 ```
 
 **YouTube (Experimental)**
 ```json
-{"id":"com.google.android.youtube","url":"https://github.com/mahfujarr/patchpile","author":"mahfujarr","name":"YouTube (Experimental)","additionalSettings":"{\"includePrereleases\":true,\"fallbackToOlderReleases\":true,\"filterReleaseTitlesByRegEx\":\"-morphe-dev$\",\"apkFilterRegEx\":\"youtube.*arm64\",\"autoApkFilterByArch\":true}"}
+{"id":"app.morphe.android.youtube","url":"https://github.com/mahfujarr/patchpile","author":"mahfujarr","name":"YouTube (Experimental)","additionalSettings":"{\"includePrereleases\":true,\"fallbackToOlderReleases\":true,\"filterReleaseTitlesByRegEx\":\"-morphe-dev$\",\"apkFilterRegEx\":\"youtube.*arm64\",\"autoApkFilterByArch\":true}"}
 ```
 
 **YT Music (Stable)**
 ```json
-{"id":"com.google.android.apps.youtube.music","url":"https://github.com/mahfujarr/patchpile","author":"mahfujarr","name":"YT Music (Stable)","additionalSettings":"{\"includePrereleases\":false,\"fallbackToOlderReleases\":true,\"filterReleaseTitlesByRegEx\":\"-morphe$\",\"apkFilterRegEx\":\"yt-music.*arm64\",\"autoApkFilterByArch\":true}"}
+{"id":"app.morphe.android.apps.youtube.music","url":"https://github.com/mahfujarr/patchpile","author":"mahfujarr","name":"YT Music (Stable)","additionalSettings":"{\"includePrereleases\":false,\"fallbackToOlderReleases\":true,\"filterReleaseTitlesByRegEx\":\"-morphe$\",\"apkFilterRegEx\":\"yt-music.*arm64\",\"autoApkFilterByArch\":true}"}
 ```
 
 **YT Music (Experimental)**
 ```json
-{"id":"com.google.android.apps.youtube.music","url":"https://github.com/mahfujarr/patchpile","author":"mahfujarr","name":"YT Music (Experimental)","additionalSettings":"{\"includePrereleases\":true,\"fallbackToOlderReleases\":true,\"filterReleaseTitlesByRegEx\":\"-morphe-dev$\",\"apkFilterRegEx\":\"yt-music.*arm64\",\"autoApkFilterByArch\":true}"}
+{"id":"app.morphe.android.apps.youtube.music","url":"https://github.com/mahfujarr/patchpile","author":"mahfujarr","name":"YT Music (Experimental)","additionalSettings":"{\"includePrereleases\":true,\"fallbackToOlderReleases\":true,\"filterReleaseTitlesByRegEx\":\"-morphe-dev$\",\"apkFilterRegEx\":\"yt-music.*arm64\",\"autoApkFilterByArch\":true}"}
 ```
 
 **Instagram (Stable)**
@@ -98,12 +98,12 @@ If you prefer importing configurations manually into Obtainium, copy the corresp
 
 **Google Photos (Rushi)**
 ```json
-{"id":"com.google.android.apps.photos","url":"https://github.com/mahfujarr/patchpile","author":"mahfujarr","name":"Google Photos (Rushi)","additionalSettings":"{\"includePrereleases\":false,\"fallbackToOlderReleases\":true,\"filterReleaseTitlesByRegEx\":\"-rushi$\",\"apkFilterRegEx\":\"google-photos.*arm64\",\"autoApkFilterByArch\":true}"}
+{"id":"app.morphe.android.apps.photos","url":"https://github.com/mahfujarr/patchpile","author":"mahfujarr","name":"Google Photos (Rushi)","additionalSettings":"{\"includePrereleases\":false,\"fallbackToOlderReleases\":true,\"filterReleaseTitlesByRegEx\":\"-rushi$\",\"apkFilterRegEx\":\"google-photos.*arm64\",\"autoApkFilterByArch\":true}"}
 ```
 
 **Google Photos (De-Vanced)**
 ```json
-{"id":"com.google.android.apps.photos","url":"https://github.com/mahfujarr/patchpile","author":"mahfujarr","name":"Google Photos (De-Vanced)","additionalSettings":"{\"includePrereleases\":false,\"fallbackToOlderReleases\":true,\"filterReleaseTitlesByRegEx\":\"-devanced$\",\"apkFilterRegEx\":\"gphotos.*arm64\",\"autoApkFilterByArch\":true}"}
+{"id":"app.morphe.android.apps.photos","url":"https://github.com/mahfujarr/patchpile","author":"mahfujarr","name":"Google Photos (De-Vanced)","additionalSettings":"{\"includePrereleases\":false,\"fallbackToOlderReleases\":true,\"filterReleaseTitlesByRegEx\":\"-devanced$\",\"apkFilterRegEx\":\"gphotos.*arm64\",\"autoApkFilterByArch\":true}"}
 ```
 
 </details>

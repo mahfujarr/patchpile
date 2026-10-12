@@ -1398,7 +1398,7 @@ if (!document.getElementById("spinner-style")) {
 (function () {
   const OBTAINIUM_CONFIGS = {
     "youtube-stable": {
-      id: "com.google.android.youtube",
+      id: "app.morphe.android.youtube",
       url: "https://github.com/mahfujarr/patchpile",
       author: "mahfujarr",
       name: "YouTube (Stable)",
@@ -1411,7 +1411,7 @@ if (!document.getElementById("spinner-style")) {
       }),
     },
     "youtube-experimental": {
-      id: "com.google.android.youtube",
+      id: "app.morphe.android.youtube",
       url: "https://github.com/mahfujarr/patchpile",
       author: "mahfujarr",
       name: "YouTube (Experimental)",
@@ -1424,7 +1424,7 @@ if (!document.getElementById("spinner-style")) {
       }),
     },
     "yt-music-stable": {
-      id: "com.google.android.apps.youtube.music",
+      id: "app.morphe.android.apps.youtube.music",
       url: "https://github.com/mahfujarr/patchpile",
       author: "mahfujarr",
       name: "YT Music (Stable)",
@@ -1437,7 +1437,7 @@ if (!document.getElementById("spinner-style")) {
       }),
     },
     "yt-music-experimental": {
-      id: "com.google.android.apps.youtube.music",
+      id: "app.morphe.android.apps.youtube.music",
       url: "https://github.com/mahfujarr/patchpile",
       author: "mahfujarr",
       name: "YT Music (Experimental)",
@@ -1476,7 +1476,7 @@ if (!document.getElementById("spinner-style")) {
       }),
     },
     "photos-rushi": {
-      id: "com.google.android.apps.photos",
+      id: "app.morphe.android.apps.photos",
       url: "https://github.com/mahfujarr/patchpile",
       author: "mahfujarr",
       name: "Google Photos (Rushi)",
@@ -1489,7 +1489,7 @@ if (!document.getElementById("spinner-style")) {
       }),
     },
     "photos-devanced": {
-      id: "com.google.android.apps.photos",
+      id: "app.morphe.android.apps.photos",
       url: "https://github.com/mahfujarr/patchpile",
       author: "mahfujarr",
       name: "Google Photos (De-Vanced)",
