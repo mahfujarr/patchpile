@@ -4,18 +4,20 @@
 # upon a successful GitHub Actions build release.
 # ---------------------------------------------------------
 
+# pyright: reportMissingImports=false, reportUnknownMemberType=false, reportUnknownVariableType=false, reportUnknownArgumentType=false
+
 import json
 import os
 import re
 import sys
 from pathlib import Path
+from typing import Any
 from urllib.parse import quote
 
-from curl_cffi import requests as curl_requests
 import pywebpush
+from curl_cffi import requests as curl_requests
 
 from src.core.logger import abort, epr, pr
-
 
 DEFAULT_SUPABASE_URL = "https://anikploodichlpgfymiq.supabase.co"
 DEFAULT_SUPABASE_KEY = "sb_publishable_r6Q5fgqVFu9TkH21jtmGjw_9MRXOYz8"
@@ -38,7 +40,7 @@ def _clean_app_name(raw: str) -> str:
 
 def _parse_apps(text: str) -> list[str]:
     apps: list[str] = []
-    seen = set()
+    seen: set[str] = set()
     for line in text.splitlines():
         if "🟢" not in line:
             continue
@@ -101,7 +103,7 @@ def _format_app_list(names: list[str]) -> str:
     return f"{names[0]}, {names[1]}"
 
 
-def _build_payload(target: str, final_md: Path | None = None) -> dict:
+def _build_payload(target: str, final_md: Path | None = None) -> dict[str, Any]:
     apps: list[str] = []
 
     # 1. Parse final_md if available
@@ -159,7 +161,7 @@ def _build_payload(target: str, final_md: Path | None = None) -> dict:
     }
 
 
-def fetch_subscriptions(supabase_url: str, supabase_key: str) -> list[dict] | None:
+def fetch_subscriptions(supabase_url: str, supabase_key: str) -> list[dict[str, Any]] | None:
     url = f"{supabase_url.rstrip('/')}/rest/v1/push_subscriptions?select=id,endpoint,p256dh,auth"
     headers = {
         "apikey": supabase_key,
@@ -173,7 +175,8 @@ def fetch_subscriptions(supabase_url: str, supabase_key: str) -> list[dict] | No
             )
             return None
         try:
-            return resp.json()
+            raw_json: Any = resp.json()
+            return raw_json if isinstance(raw_json, list) else None
         except Exception as e:
             epr(f"Failed to parse Supabase JSON: {e}")
             return None

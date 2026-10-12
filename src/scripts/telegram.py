@@ -19,14 +19,14 @@ from pathlib import Path
 
 from curl_cffi import requests as curl_requests
 
-from src.core.logger import IS_GITHUB, abort, epr, pr
+from src.core.logger import IS_GITHUB, abort, epr, pr, wpr
 
 _BACKTICK_RE = re.compile(r"`([^`]+)`")
 
 
 def _require_ci(script: str) -> None:
     if not IS_GITHUB:
-        abort(f"'{script}' is only available in GitHub Actions")
+        wpr(f"'{script}' running outside GitHub Actions environment")
 
 def _parse_final_md(final_md: Path) -> tuple[list[str], str, list[str]]:
     green_lines: list[str] = []

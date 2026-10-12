@@ -14,12 +14,12 @@
 import sys
 from pathlib import Path
 
-from src.core.logger import IS_GITHUB, abort
+from src.core.logger import IS_GITHUB, abort, wpr
 
 
 def _require_ci(script: str) -> None:
     if not IS_GITHUB:
-        abort(f"'{script}' is only available in GitHub Actions")
+        wpr(f"'{script}' running outside GitHub Actions environment")
 
 def _parse_log_file(log: Path, green_lines: list[str], collected: list[str]) -> str:
     microg_line = ""

@@ -14,10 +14,11 @@ on:
           - piko
           - piko-dev
           - rushi
+          - devanced
+          - de-vanced
           - hoo-dles
           - hooman
           - paresh
-          - de-vanced
           - tiktok
 
   workflow_call:

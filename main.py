@@ -48,10 +48,10 @@ def _require_java(min_version: int = 21) -> None:
         abort(f"Java not found. Please install Java {min_version} or higher")
 
     result = subprocess.run(["java", "-version"], capture_output=True, text=True)
-    match = re.search(r'version "(\d+)', result.stderr)
+    combined = (result.stderr or "") + (result.stdout or "")
+    match = re.search(r'version "(\d+)', combined)
     if not match:
         abort("Could not determine Java version")
-    assert match
 
     version = int(match.group(1))
     if version < min_version:
@@ -102,7 +102,10 @@ def _sigint_handler(sig: int, frame: object) -> None:
     mark_interrupted()
     epr("Interrupted by user")
     for tmp in TEMP_DIR.rglob("tmp*"):
-        shutil.rmtree(tmp, ignore_errors=True)
+        if tmp.is_file():
+            tmp.unlink(missing_ok=True)
+        elif tmp.is_dir():
+            shutil.rmtree(tmp, ignore_errors=True)
     for ks in TEMP_DIR.glob("*.keystore"):
         ks.unlink(missing_ok=True)
     os._exit(130)
@@ -115,6 +118,9 @@ def main() -> None:
             sys.exit(_build())
         case ["clear"]:
             sys.exit(_clear())
+        case ["-h" | "--help"]:
+            print("Usage: main.py [target] [arch] | clear")
+            sys.exit(0)
         case [target, *rest] if not rest or rest[0] in VALID_ARCHES:
             sys.exit(_build(target_app=target, arch_override=rest[0] if rest else None))
         case [_, arch]:

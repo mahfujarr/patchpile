@@ -11,9 +11,15 @@
 # See the AUTHORS file in the root directory for details.
 # ---------------------------------------------------------
 
+import io
 import os
 import sys
 from typing import Never
+
+if isinstance(sys.stdout, io.TextIOWrapper):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")  # pyright: ignore[reportUnknownMemberType]
+if isinstance(sys.stderr, io.TextIOWrapper):
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")  # pyright: ignore[reportUnknownMemberType]
 
 IS_GITHUB = os.getenv("GITHUB_ACTIONS") == "true"
 _interrupted = False

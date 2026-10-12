@@ -15,17 +15,17 @@
 import json  # noqa: I001
 import os
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from src.core.config import CONFIG_PATH, AppEntry, load_toml, parse_app_entries, parse_config
-from src.core.logger import IS_GITHUB, abort, epr
+from src.core.logger import IS_GITHUB, abort, epr, wpr
 from src.core.network import NetworkManager, ResourceNotFoundError
 
 
 def _require_ci(script: str) -> None:
     if not IS_GITHUB:
-        abort(f"'{script}' is only available in GitHub Actions")
+        wpr(f"'{script}' running outside GitHub Actions environment")
 
 def _fetch_latest_release(source: str, net: NetworkManager, version: str = "latest") -> tuple[str, str]:
     scheme, clean_src = source.split(":", 1)
@@ -41,7 +41,7 @@ def _fetch_latest_release(source: str, net: NetworkManager, version: str = "late
             releases: list[dict[str, Any]] = [r for r in json.loads(releases_raw) if not r.get("draft")]
             if releases:
                 releases.sort(
-                    key=lambda r: datetime.fromisoformat(r["published_at"]) if r.get("published_at") else (datetime.fromisoformat(r["created_at"]) if r.get("created_at") else datetime.min.replace(tzinfo=timezone.utc)),
+                    key=lambda r: datetime.fromisoformat(r["published_at"]) if r.get("published_at") else (datetime.fromisoformat(r["created_at"]) if r.get("created_at") else datetime.min.replace(tzinfo=UTC)),
                     reverse=True,
                 )
                 upstream_rel = releases[0]
@@ -68,11 +68,8 @@ def _fetch_our_releases(repo: str, net: NetworkManager) -> dict[str, str]:
             brand = tag.split("-", 1)[1] if "-" in tag else ""
             if brand:
                 pub_date = str(rel.get("published_at") or "")
-                if pub_date:
-                    if brand not in our_releases_by_brand:
-                        our_releases_by_brand[brand] = pub_date
-                    elif datetime.fromisoformat(pub_date) > datetime.fromisoformat(our_releases_by_brand[brand]):
-                        our_releases_by_brand[brand] = pub_date
+                if pub_date and (brand not in our_releases_by_brand or datetime.fromisoformat(pub_date) > datetime.fromisoformat(our_releases_by_brand[brand])):
+                    our_releases_by_brand[brand] = pub_date
     except Exception as exc:
         epr(f"Failed to fetch our releases: {exc}")
         our_releases_by_brand = {}
@@ -83,14 +80,14 @@ def _load_entries() -> list[AppEntry]:
     return parse_app_entries(data, parse_config(data))
 
 def get_matrix(source: str) -> None:
-    source_lower = source.lower()
+    source_lower = source.lower().replace("de-vanced", "devanced")
     filter_changelog = os.getenv("FILTER_CHANGELOG", "false").lower() == "true"
     patches_source = ""
     has_changelog_keywords = False
     is_prerelease = False
     staged: list[AppEntry] = []
     for entry in _load_entries():
-        if not entry.enabled or entry.brand.lower() != source_lower:
+        if not entry.enabled or entry.brand.lower().replace("de-vanced", "devanced") != source_lower:
             continue
         if not patches_source:
             patches_source = next(iter(entry.patches), "")
