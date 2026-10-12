@@ -150,6 +150,8 @@ jobs:
             --clobber \
             --repo "$GITHUB_REPOSITORY"
 
+          uv run python -m src.scripts.release_assets replace-assets "$TAG" "${apks[@]}"
+
       - name: Upload build log to draft release
         if: always()
         env:
@@ -203,6 +205,14 @@ jobs:
 
           echo "has_apks=${has}" >> "$GITHUB_OUTPUT"
 
+      - name: Prune duplicate APK assets in release
+        if: steps.check.outputs.has_apks == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ needs.prepare.outputs.version }}
+        run: |
+          uv run python -m src.scripts.release_assets prune-release "$TAG"
+
       - name: Download logs from draft release
         if: steps.check.outputs.has_apks == 'true'
         env:
@@ -220,7 +230,17 @@ jobs:
             --repo "$GITHUB_REPOSITORY" \
             --json assets \
             --jq '.assets[] | select(.name | startswith("build-")) | .apiUrl' |
-            xargs -I{} gh api --method DELETE "{}"
+            xargs -I{} gh api --method DELETE "{}" || true
+
+          gh release view "$TAG" \
+            --repo "$GITHUB_REPOSITORY" \
+            --json body \
+            --jq .body > existing.md || true
+
+          gh release view "$TAG" \
+            --repo "$GITHUB_REPOSITORY" \
+            --json assets \
+            --jq '[.assets[].name | select(endswith(".apk"))]' > current_assets.json || true
 
       - name: Combine logs and finalize release
         if: steps.check.outputs.has_apks == 'true'
@@ -229,7 +249,7 @@ jobs:
           TAG: ${{ needs.prepare.outputs.version }}
           PRERELEASE: ${{ needs.prepare.outputs.prerelease }}
         run: |
-          uv run python -m src.scripts.logs combine-logs logs |
+          uv run python -m src.scripts.logs combine-logs logs existing.md current_assets.json |
             sed "s/{TAG}/$TAG/g" > final.md
 
           if [ "$PRERELEASE" = "true" ]; then
