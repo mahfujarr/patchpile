@@ -29,7 +29,7 @@ github-dlurl = "https://github.com/krvstek/uni-storage/releases/tag/instagram"
 apkmirror-dlurl = "https://www.apkmirror.com/apk/instagram/instagram-instagram"
 arch = "arm64-v8a"
 version = "exp"
-#patcher-args = "-e 'Theme' -Oamoled=true"
+patcher-args = "-e 'Disable screenshot detection' -e 'Make ephemeral media permanent' -e 'View stories anonymously'"
 
 [Instagram-Experimental.patches]
 "github:crimera/piko" = { version = "dev" }
