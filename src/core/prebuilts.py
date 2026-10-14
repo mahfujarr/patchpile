@@ -45,6 +45,12 @@ def get_highest_ver(versions: list[str]) -> str:
     return max(clean, key=_ver_key)
 
 def fetch_cli(cli_src: str, cli_ver: str, net: NetworkManager) -> Path:
+    if cli_src.startswith(("local:", "file:")):
+        path = Path(cli_src.split(":", 1)[1].strip())
+        if not path.is_file():
+            raise PrebuiltsError(f"Local CLI file not found: {path}")
+        return path
+
     cli_org = _strip_src_prefix(cli_src).split("/")[0]
     cli_dir = TEMP_DIR / cli_org.lower()
     cli_dir.mkdir(parents=True, exist_ok=True)
@@ -55,6 +61,12 @@ def fetch_cli(cli_src: str, cli_ver: str, net: NetworkManager) -> Path:
     return jar
 
 def fetch_mpp(src: str, ver: str, net: NetworkManager) -> Path:
+    if src.startswith(("local:", "file:")):
+        path = Path(src.split(":", 1)[1].strip())
+        if not path.is_file():
+            raise PrebuiltsError(f"Local patch file not found: {path}")
+        return path
+
     org = _strip_src_prefix(src).split("/")[0]
     cl_dir = TEMP_DIR / org.lower()
     cl_dir.mkdir(parents=True, exist_ok=True)
