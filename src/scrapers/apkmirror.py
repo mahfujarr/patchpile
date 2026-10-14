@@ -43,7 +43,7 @@ class APKMirrorScraper(BaseScraper):
         versions: list[str] = []
         for a in soup.select("#primary a.fontBlack[href*='-release/']"):
             text = a.get_text(strip=True)
-            if "beta" in text.lower() or "alpha" in text.lower() or "secondary" in text.lower():
+            if "beta" in text.lower() or "alpha" in text.lower() or "secondary" in text.lower() or "extended" in text.lower():
                 continue
             v = text.split()[-1]
             self._release_urls[v] = urljoin("https://www.apkmirror.com", str(a["href"]))
@@ -66,6 +66,10 @@ class APKMirrorScraper(BaseScraper):
                 text = a.get_text()
                 if (version in text or clean_ver in text) and f"/{self._category}/" in str(a.get("href") or ""):
                     if "secondary" in text.lower() and "secondary" not in version.lower():
+                        continue
+                    if "extended" in text.lower() and "extended" not in version.lower():
+                        continue
+                    if f"{clean_ver}-" in text.lower() and f"{clean_ver}-" not in version.lower():
                         continue
                     release_url = urljoin("https://www.apkmirror.com", str(a["href"]))
                     break
@@ -122,6 +126,8 @@ class APKMirrorScraper(BaseScraper):
 
                 row_title = link.get_text(strip=True)
                 if version and ("beta" not in version.lower()) and ("beta" in row_title.lower()):
+                    continue
+                if version and ("extended" not in version.lower()) and ("extended" in row_title.lower()):
                     continue
                 if version and ("lite" not in version.lower()) and ("lite" in row_title.lower()):
                     continue
