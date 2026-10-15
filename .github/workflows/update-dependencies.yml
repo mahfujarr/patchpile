@@ -1,0 +1,45 @@
+name: Update Dependencies
+
+on:
+  schedule:
+    # Run every Saturday at 00:00 UTC
+    - cron: '0 0 * * 6'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-dependencies-${{ github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  update-deps:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+        with:
+          python-version: "3.13"
+          enable-cache: false
+
+      - name: Upgrade uv.lock
+        run: uv lock --upgrade
+
+      - name: Commit and push changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add uv.lock
+          if git diff --cached --quiet; then
+            echo "All dependencies in uv.lock are already up to date."
+            exit 0
+          fi
+          git commit -m "chore(deps): upgrade dependencies in uv.lock"
+          git push origin HEAD:${{ github.ref_name }}
+

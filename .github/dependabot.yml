@@ -1,19 +1,14 @@
+# Dependabot version updates are disabled in favor of .github/workflows/update-dependencies.yml
 version: 2
 updates:
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
-    groups:
-      github-actions:
-        patterns:
-          - "*"
+    open-pull-requests-limit: 0
 
   - package-ecosystem: "uv"
     directory: "/"
     schedule:
       interval: "weekly"
-    groups:
-      uv-dependencies:
-        patterns:
-          - "*"
+    open-pull-requests-limit: 0
