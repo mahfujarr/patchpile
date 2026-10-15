@@ -224,8 +224,6 @@ def notify(brand: str, final_md_path: str = "final.md") -> None:
     expired = 0
     failed = 0
 
-    claims = {"sub": vapid_email}
-
     for sub in subscriptions:
         endpoint = sub.get("endpoint")
         p256dh = sub.get("p256dh")
@@ -242,6 +240,9 @@ def notify(brand: str, final_md_path: str = "final.md") -> None:
         }
 
         try:
+            # Pass fresh claims copy per subscriber: pywebpush mutates the dictionary in-place
+            # by adding 'aud' and 'exp', which breaks subsequent subscribers from other providers (e.g. Mozilla vs Google FCM)
+            claims = {"sub": vapid_email}
             resp = pywebpush.webpush(
                 subscription_info=sub_info,
                 data=payload_str,
