@@ -2109,39 +2109,58 @@ h1 .accent {
   }
 }
 
-/* ---------- how-to ---------- */
-.howto {
-  margin-top: 64px;
-  padding: 28px 0 0;
+/* ---------- how-to (ytdlnis card style) ---------- */
+details.howto-row {
+  display: block;
+  padding: 0;
+  margin-top: 12px;
+  border: 1px dashed var(--line);
+  border-radius: 10px;
+  background: transparent;
+  transition: border-color 0.15s, background-color 0.15s;
 }
 
-.howto-details > summary {
+details.howto-row:hover {
+  border-color: var(--accent);
+}
+
+details.howto-row > summary {
   cursor: pointer;
   list-style: none;
+  padding: 13px 16px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 16px;
+  gap: 12px;
   user-select: none;
 }
 
-.howto-details > summary::-webkit-details-marker {
+details.howto-row > summary::-webkit-details-marker {
   display: none;
 }
 
-.howto-details > summary::after {
-  content: "+";
-  color: var(--accent);
-  font-family: var(--mono);
-  font-size: 20px;
-  font-weight: 400;
+details.howto-row[open] > summary {
+  border-bottom: 1px dashed var(--line);
 }
 
-.howto-details[open] > summary::after {
-  content: "-";
+details.howto-row .extra-link {
+  pointer-events: none;
 }
 
-.howto-details[open] .steps {
+details.howto-row .extra-link svg {
+  width: 12px;
+  height: 12px;
+  transition: transform 0.2s ease;
+}
+
+details.howto-row[open] .extra-link svg {
+  transform: rotate(180deg);
+}
+
+details.howto-row .steps {
+  padding: 16px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
   animation: guide-enter 0.28s ease both;
 }
 
@@ -2157,53 +2176,53 @@ h1 .accent {
   }
 }
 
-.howto h2 {
-  font-size: 13px;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--text-faint);
-  font-weight: 600;
-  margin-bottom: 20px;
-}
-
-.howto-details:not([open]) h2 {
-  margin-bottom: 0;
-}
-
-.steps {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 14px;
-}
-
-.step {
+details.howto-row .step {
   background: var(--bg-card-s);
   border: 1px solid var(--line-soft);
-  border-radius: 12px;
-  padding: 18px 18px 20px;
+  border-radius: 10px;
+  padding: 14px 16px;
+  transition: border-color 0.2s;
 }
 
-.step .n {
+details.howto-row .step:hover {
+  border-color: var(--line);
+}
+
+details.howto-row .step .n {
   font-family: var(--mono);
   font-size: 11px;
+  font-weight: 700;
   color: var(--accent);
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 
-.step p {
-  font-size: 13.5px;
+details.howto-row .step p {
+  font-size: 13px;
   color: var(--text-dim);
-  line-height: 1.55;
+  line-height: 1.5;
+  margin: 0;
 }
 
-.step a {
+details.howto-row .step a {
   color: var(--accent);
   border-bottom: 1px solid currentColor;
 }
 
 @media (max-width: 700px) {
-  .steps {
+  details.howto-row .steps {
     grid-template-columns: 1fr;
+    padding: 14px;
+  }
+}
+
+@media (max-width: 600px) {
+  details.howto-row > summary {
+    flex-wrap: wrap;
+  }
+
+  details.howto-row .extra-link {
+    flex-basis: 100%;
+    justify-content: center;
   }
 }
 
