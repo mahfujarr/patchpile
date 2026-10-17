@@ -197,13 +197,14 @@ function showToast(message, duration = 4500) {
     }, 1000);
   }
 
-  async function getLocalManifest() {
-    if (!localManifest) {
+  async function getLocalManifest(forceFresh = false) {
+    if (!localManifest || forceFresh) {
+      const cacheBust = forceFresh ? `?t=${Date.now()}` : "";
       try {
         const manifestRes = await fetch(
-          "https://raw.githubusercontent.com/mahfujarr/patchpile/main/assets/releases.json",
+          `https://raw.githubusercontent.com/mahfujarr/patchpile/main/assets/releases.json${cacheBust}`,
           {
-            cache: "no-store",
+            cache: forceFresh ? "reload" : "no-store",
           },
         );
         if (manifestRes.ok) {
@@ -212,8 +213,8 @@ function showToast(message, duration = 4500) {
         }
       } catch (_) {}
 
-      const localRes = await fetch("./assets/releases.json", {
-        cache: "no-store",
+      const localRes = await fetch(`./assets/releases.json${cacheBust}`, {
+        cache: forceFresh ? "reload" : "no-store",
       });
       if (!localRes.ok) throw new Error(`HTTP ${localRes.status}`);
       localManifest = await localRes.json();
@@ -221,8 +222,8 @@ function showToast(message, duration = 4500) {
     return localManifest;
   }
 
-  async function getReleasesList(repo) {
-    const manifest = await getLocalManifest();
+  async function getReleasesList(repo, forceFresh = false) {
+    const manifest = await getLocalManifest(forceFresh);
     const manifestReleases = manifest?.repos?.[repo];
     if (!Array.isArray(manifestReleases)) {
       throw new Error("Release manifest has no data for this repository");
@@ -475,6 +476,7 @@ function showToast(message, duration = 4500) {
       .join("-");
   }
 
+  let whatsNewListenersAttached = false;
   function setupWhatsNew(releases) {
     const section = document.getElementById("whats-new-section");
     if (!section || !Array.isArray(releases) || releases.length === 0) return;
@@ -675,20 +677,76 @@ function showToast(message, duration = 4500) {
     }
 
     // Recalculate changelog expand button when details unfolds or window resizes
-    section.addEventListener("toggle", () => {
-      if (section.open) {
-        setTimeout(updateExpandBtnVisibility, 60);
-        setTimeout(updateExpandBtnVisibility, 200);
-      } else {
-        updateExpandBtnVisibility();
-      }
-    });
+    if (!whatsNewListenersAttached) {
+      whatsNewListenersAttached = true;
 
-    window.addEventListener("resize", () => {
-      if (section.open) {
-        updateExpandBtnVisibility();
+      section.addEventListener("toggle", () => {
+        if (section.open) {
+          setTimeout(updateExpandBtnVisibility, 60);
+          setTimeout(updateExpandBtnVisibility, 200);
+        } else {
+          updateExpandBtnVisibility();
+        }
+      });
+
+      window.addEventListener("resize", () => {
+        if (section.open) {
+          updateExpandBtnVisibility();
+        }
+      });
+
+      if (expandBtn && changelogContentEl) {
+        expandBtn.addEventListener("click", () => {
+          const isExp = changelogContentEl.classList.toggle("expanded");
+          expandBtn.textContent = isExp ? "Show less" : "Show more";
+          expandBtn.setAttribute("aria-expanded", String(isExp));
+        });
       }
-    });
+
+      if (runsBar) {
+        // Enable smooth drag-to-scroll on runsBar
+        let isPointerDown = false;
+        let startX = 0;
+        let scrollLeft = 0;
+        let hasDragged = false;
+
+        runsBar.addEventListener("pointerdown", (e) => {
+          if (e.pointerType === "mouse" && e.button !== 0) return;
+          isPointerDown = true;
+          hasDragged = false;
+          startX = e.clientX;
+          scrollLeft = runsBar.scrollLeft;
+        });
+
+        window.addEventListener("pointermove", (e) => {
+          if (!isPointerDown) return;
+          const dx = e.clientX - startX;
+          if (Math.abs(dx) > 4) {
+            hasDragged = true;
+            runsBar.scrollLeft = scrollLeft - dx;
+          }
+        });
+
+        const endPointer = () => {
+          isPointerDown = false;
+        };
+        window.addEventListener("pointerup", endPointer);
+        window.addEventListener("pointercancel", endPointer);
+
+        // Prevent accidental pill activation when dragging/swiping
+        runsBar.addEventListener(
+          "click",
+          (e) => {
+            if (hasDragged) {
+              e.preventDefault();
+              e.stopPropagation();
+              hasDragged = false;
+            }
+          },
+          true,
+        );
+      }
+    }
 
     // Populate runs bar switcher
     if (runsBar) {
@@ -717,56 +775,6 @@ function showToast(message, duration = 4500) {
         });
 
         runsBar.append(pill);
-      });
-
-      // Enable smooth drag-to-scroll on runsBar
-      let isPointerDown = false;
-      let startX = 0;
-      let scrollLeft = 0;
-      let hasDragged = false;
-
-      runsBar.addEventListener("pointerdown", (e) => {
-        if (e.pointerType === "mouse" && e.button !== 0) return;
-        isPointerDown = true;
-        hasDragged = false;
-        startX = e.clientX;
-        scrollLeft = runsBar.scrollLeft;
-      });
-
-      window.addEventListener("pointermove", (e) => {
-        if (!isPointerDown) return;
-        const dx = e.clientX - startX;
-        if (Math.abs(dx) > 4) {
-          hasDragged = true;
-          runsBar.scrollLeft = scrollLeft - dx;
-        }
-      });
-
-      const endPointer = () => {
-        isPointerDown = false;
-      };
-      window.addEventListener("pointerup", endPointer);
-      window.addEventListener("pointercancel", endPointer);
-
-      // Prevent accidental pill activation when dragging/swiping
-      runsBar.addEventListener(
-        "click",
-        (e) => {
-          if (hasDragged) {
-            e.preventDefault();
-            e.stopPropagation();
-            hasDragged = false;
-          }
-        },
-        true,
-      );
-    }
-
-    if (expandBtn && changelogContentEl) {
-      expandBtn.addEventListener("click", () => {
-        const isExp = changelogContentEl.classList.toggle("expanded");
-        expandBtn.textContent = isExp ? "Show less" : "Show more";
-        expandBtn.setAttribute("aria-expanded", String(isExp));
       });
     }
 
@@ -842,14 +850,18 @@ function showToast(message, duration = 4500) {
     nextCheckTimerInterval = setInterval(updateTimer, 1000);
   }
 
-  async function fetchLatestCiRun() {
+  async function fetchLatestCiRun(forceFresh = false) {
     if (isFetchingCiRun) return;
     isFetchingCiRun = true;
     const el = document.getElementById("last-sync-date");
 
     try {
+      const cacheBust = forceFresh ? `&_t=${Date.now()}` : "";
       const res = await fetch(
-        "https://api.github.com/repos/mahfujarr/patchpile/actions/workflows/ci.yml/runs?per_page=1",
+        `https://api.github.com/repos/mahfujarr/patchpile/actions/workflows/ci.yml/runs?per_page=1${cacheBust}`,
+        {
+          cache: forceFresh ? "reload" : "no-store",
+        },
       );
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
@@ -860,7 +872,7 @@ function showToast(message, duration = 4500) {
       startNextCheckCountdown(runDate);
     } catch (_) {
       try {
-        const manifest = await getLocalManifest();
+        const manifest = await getLocalManifest(forceFresh);
         const lastSync = manifest?.actions?.last_sync;
         if (lastSync) {
           if (el) el.textContent = formatBuiltAt(lastSync);
@@ -882,7 +894,7 @@ function showToast(message, duration = 4500) {
   fetchLatestCiRun();
 
   // --- Application Release Mapping Engine ---
-  (async () => {
+  async function updateAllReleaseCards(forceFresh = false) {
     const repoGroups = {};
     releaseCards.forEach((card) => {
       const repo = card.dataset.repo;
@@ -892,7 +904,7 @@ function showToast(message, duration = 4500) {
     for (const [repo, group] of Object.entries(repoGroups)) {
       let releases;
       try {
-        releases = await getReleasesList(repo);
+        releases = await getReleasesList(repo, forceFresh);
       } catch (e) {
         if (e.message === "GitHub API rate limited") {
           rateLimitTriggered = true;
@@ -918,8 +930,8 @@ function showToast(message, duration = 4500) {
       group.forEach((card) => {
         const patchSource = card.dataset.patchSource;
         const match = card.dataset.assetMatch;
-        const sizeEl = card.querySelector(".f-size");
-        const builtEl = card.querySelector(".f-built");
+        let sizeEl = card.querySelector(".f-size");
+        let builtEl = card.querySelector(".f-built");
         const versionEl = card.querySelector(".v-num");
         const dlBtn =
           card.querySelector(":scope > .dl-btn") ||
@@ -954,20 +966,53 @@ function showToast(message, duration = 4500) {
           return;
         }
 
+        // Restore version / size / build elements if they were previously removed
+        const versionContainer = card.querySelector(".app-version, .exp-version");
+        if (!sizeEl && versionContainer) {
+          sizeEl = document.createElement("span");
+          sizeEl.className = "f-size";
+          versionContainer.appendChild(sizeEl);
+        }
+        if (!builtEl && versionContainer) {
+          builtEl = document.createElement("span");
+          builtEl.className = "f-built";
+          versionContainer.appendChild(builtEl);
+        }
+
+        if (dlBtn) {
+          dlBtn.classList.remove("error");
+          dlBtn.innerHTML = `
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 3v12m0 0 4-4m-4 4-4-4M5 21h14" />
+            </svg>
+            <span>Download</span>
+          `;
+          dlBtn.href = asset.browser_download_url;
+        }
+
         updateChangelog(card, data.upstream_release || null);
-        sizeEl.textContent = formatBytes(asset.size);
-        sizeEl.classList.remove("skel");
-        dlBtn.href = asset.browser_download_url;
+        if (sizeEl) {
+          sizeEl.textContent = formatBytes(asset.size);
+          sizeEl.classList.remove("skel");
+        }
         if (card.classList.contains("exp-item")) {
           const experimentalBtn = card
             .closest(".app")
             ?.querySelector(".experimental-dl-btn");
-          if (experimentalBtn)
+          if (experimentalBtn) {
+            experimentalBtn.classList.remove("error");
+            experimentalBtn.innerHTML = `
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 3v12m0 0 4-4m-4 4-4-4M5 21h14" />
+              </svg>
+              <span>Download</span>
+            `;
             experimentalBtn.href = asset.browser_download_url;
+          }
         }
 
         const vMatch = asset.name.match(/v?([\d.]+)-arm64/);
-        if (vMatch) versionEl.textContent = "Ver: " + vMatch[1];
+        if (vMatch && versionEl) versionEl.textContent = "Ver: " + vMatch[1];
 
         const builtSource = asset.updated_at || data.published_at;
         if (builtEl && builtSource) {
@@ -1002,32 +1047,20 @@ function showToast(message, duration = 4500) {
     } else {
       hideTopWarning();
     }
-  })();
-
-  // --- Refresh Button Handler ---
-  const refreshBtn = document.getElementById("refresh-releases");
-  if (refreshBtn) {
-    refreshBtn.addEventListener("click", async () => {
-      refreshBtn.innerHTML =
-        '<svg style="animation: spin 1s linear infinite; display: inline-block;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 6v6l4 2"></path></svg>';
-      refreshBtn.style.pointerEvents = "none";
-      localManifest = null;
-      setTimeout(() => {
-        location.reload();
-      }, 500);
-    });
   }
 
+  // Initial render of all release cards
+  updateAllReleaseCards(false);
+
   // --- ytdlnis Pipeline Setup ---
-  (async () => {
+  async function updateYtdlnis(manifest) {
     const row = document.getElementById("ytdlnis-row");
     if (!row) return;
     const versionEl = document.getElementById("ytdlnis-version");
     const linkEl = document.getElementById("ytdlnis-link");
 
     try {
-      const manifest = await getLocalManifest();
-      const data = manifest?.ytdlnis;
+      const data = manifest ? manifest.ytdlnis : (await getLocalManifest())?.ytdlnis;
       if (data) {
         const asset = (data.assets || []).find((a) =>
           a.name.toLowerCase().endsWith(".apk"),
@@ -1036,10 +1069,51 @@ function showToast(message, duration = 4500) {
         if (data.tag_name && versionEl) {
           versionEl.textContent = ` (${data.tag_name.replace(/^v/, "v")})`;
         }
-        return;
       }
     } catch (e) {}
-  })();
+  }
+
+  updateYtdlnis();
+
+  // --- Refresh Button Handler ---
+  const refreshBtn = document.getElementById("refresh-releases");
+  if (refreshBtn) {
+    refreshBtn.addEventListener("click", async () => {
+      const svg = refreshBtn.querySelector("svg");
+      if (svg) svg.style.animation = "spin 0.8s linear infinite";
+      refreshBtn.disabled = true;
+      refreshBtn.style.pointerEvents = "none";
+
+      try {
+        // Hard-fetch fresh manifest bypassing browser & CDN caches
+        const freshManifest = await getLocalManifest(true);
+
+        // Instantly refresh all release cards & download links in DOM
+        await updateAllReleaseCards(true);
+
+        // Instantly refresh YTDLnis link
+        await updateYtdlnis(freshManifest);
+
+        // Instantly refresh What's New section
+        const freshReleases = freshManifest?.repos?.["mahfujarr/patchpile"];
+        if (Array.isArray(freshReleases) && freshReleases.length > 0) {
+          setupWhatsNew(freshReleases);
+        }
+
+        // Hard refresh CI run status
+        await fetchLatestCiRun(true);
+
+        showToast("All release links refreshed to latest!");
+      } catch (err) {
+        console.error("Failed to refresh release links:", err);
+        showToast("Failed to refresh: " + (err.message || "Network error"));
+      } finally {
+        if (svg) svg.style.animation = "";
+        refreshBtn.disabled = false;
+        refreshBtn.style.pointerEvents = "";
+      }
+    });
+  }
 })();
 
 // --- Add spinner animation CSS ---
