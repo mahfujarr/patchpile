@@ -22,7 +22,7 @@ select = ["E", "F", "B", "I", "A", "ISC", "UP", "RUF", "SIM", "C4", "PTH", "G", 
 ignore = ["E501"]
 
 [tool.pyright]
-pythonVersion = "3.13"
+pythonVersion = "3.15"
 pythonPlatform = "Linux"
 include = ["src", "main.py"]
 typeCheckingMode = "strict" 
