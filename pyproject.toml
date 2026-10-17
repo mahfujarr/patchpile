@@ -1,13 +1,14 @@
 [project]
-name = "uni-apks"
-version = "0.0.0"
+name = "patchpile"
+version = "1.0.0"
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = ">=3.15"
 authors = [
+    { name = "mahfujarr" },
     { name = "krvstek" }
 ]
 license = { file = "LICENSE" }
-urls = { Repository = "https://github.com/krvstek/uni-apks" }
+urls = { Repository = "https://github.com/mahfujarr/patchpile" }
 dependencies = [
     "beautifulsoup4>=4.15.0",
     "curl-cffi>=0.16.3",
