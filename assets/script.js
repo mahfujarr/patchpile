@@ -1467,3 +1467,36 @@ if (!document.getElementById("spinner-style")) {
     notifToggle.addEventListener("click", handleToggleClick);
   }
 })();
+
+// --- How-to Guide Toggle Control ---
+(function () {
+  const howtoRow = document.getElementById("howto-row");
+  if (!howtoRow) return;
+
+  const summary = howtoRow.querySelector(".howto-summary");
+  const toggleBtn = howtoRow.querySelector(".extra-link");
+
+  if (summary) {
+    summary.addEventListener("click", (event) => {
+      // Expand/collapse ONLY if the click originated from the button
+      if (!event.target.closest(".extra-link")) {
+        event.preventDefault();
+      }
+    });
+  }
+
+  if (toggleBtn) {
+    toggleBtn.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        howtoRow.open = !howtoRow.open;
+      }
+    });
+  }
+
+  howtoRow.addEventListener("toggle", () => {
+    if (toggleBtn) {
+      toggleBtn.setAttribute("aria-expanded", String(howtoRow.open));
+    }
+  });
+})();

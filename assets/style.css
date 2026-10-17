@@ -2120,12 +2120,8 @@ details.howto-row {
   transition: border-color 0.15s, background-color 0.15s;
 }
 
-details.howto-row:hover {
-  border-color: var(--accent);
-}
-
 details.howto-row > summary {
-  cursor: pointer;
+  cursor: default;
   list-style: none;
   padding: 13px 16px;
   display: flex;
@@ -2143,7 +2139,12 @@ details.howto-row[open] > summary {
 }
 
 details.howto-row .extra-link {
-  pointer-events: none;
+  cursor: pointer;
+  user-select: none;
+}
+
+details.howto-row .extra-link:active {
+  transform: scale(0.97);
 }
 
 details.howto-row .extra-link svg {
