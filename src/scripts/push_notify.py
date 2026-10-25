@@ -23,8 +23,8 @@ DEFAULT_SUPABASE_URL = "https://anikploodichlpgfymiq.supabase.co"
 DEFAULT_SUPABASE_KEY = "sb_publishable_r6Q5fgqVFu9TkH21jtmGjw_9MRXOYz8"
 DEFAULT_VAPID_PUBLIC_KEY = "BKHQ6jfcI8aUOUHR10SH2DmKDTEz9kX9thkdzR-8ZEY462f8LMutAfe9XLcxMnFye4rCS1tZ0i3Gnx1oNy-tjmE"
 DEFAULT_VAPID_PRIVATE_KEY = "qUNcnHcAYe7H80Kdr-yh68e3dIFABfv-PUV0MfIINMQ"
-DEFAULT_CLAIMS_EMAIL = "mailto:admin@patchpile.app"
-SITE_URL = "https://mahfujarr.me/patchpile/"
+DEFAULT_CLAIMS_EMAIL = "mailto:mahfu63@gmail.com"
+SITE_URL = "https://mahfujarr.github.io/patchpile/"
 
 
 def _clean_app_name(raw: str) -> str:
