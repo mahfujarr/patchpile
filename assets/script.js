@@ -360,6 +360,8 @@ function showToast(message, duration = 4500) {
         return `<div class="icon ig" aria-hidden="true"><svg viewBox="0 0 24 24"><defs><linearGradient id="wn-ig-grad" x1="3" y1="21" x2="21" y2="3" gradientUnits="userSpaceOnUse"><stop stop-color="#ffdc80"/><stop offset=".35" stop-color="#fcaf45"/><stop offset=".65" stop-color="#e1306c"/><stop offset="1" stop-color="#833ab4"/></linearGradient></defs><rect x="2.5" y="2.5" width="19" height="19" rx="5.5" fill="url(#wn-ig-grad)"/><rect x="6.5" y="6.5" width="11" height="11" rx="3.5" fill="none" stroke="#ffffff" stroke-width="1.8"/><circle cx="12" cy="12" r="2.7" fill="none" stroke="#ffffff" stroke-width="1.8"/><circle cx="17.2" cy="6.8" r="1.1" fill="#ffffff"/></svg></div>`;
       case "gph":
         return `<div class="icon gph" aria-hidden="true"><img src="https://www.gstatic.com/images/branding/product/2x/photos_96dp.png" alt="" /></div>`;
+      case "fb":
+        return `<div class="icon fb" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="12" fill="#1877f2"/><path d="M16.671 15.469l.532-3.47h-3.328v-2.25c0-.949.465-1.874 1.956-1.874h1.514V4.922s-1.374-.235-2.686-.235c-2.741 0-4.533 1.662-4.533 4.669v2.002H7.078v3.47h3.047v8.385a12.18 12.18 0 0 0 3.75 0v-8.385h2.796z" fill="#ffffff"/></svg></div>`;
       default:
         return `<div class="icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 12h6m-3-3v6"/></svg></div>`;
     }
@@ -403,6 +405,8 @@ function showToast(message, duration = 4500) {
         appType = "ig";
       } else if (lower.includes("photo") || lower.includes("gphotos")) {
         appType = "gph";
+      } else if (lower.includes("facebook") || lower.includes("hush")) {
+        appType = "fb";
       }
 
       apps.push({
@@ -435,6 +439,9 @@ function showToast(message, duration = 4500) {
         } else if (lower.includes("photos") || lower.includes("gphotos")) {
           rawName = "Google Photos";
           appType = "gph";
+        } else if (lower.includes("facebook")) {
+          rawName = "Facebook";
+          appType = "fb";
         }
 
         apps.push({
@@ -464,6 +471,8 @@ function showToast(message, duration = 4500) {
       devanced: "De-vanced",
       "de-vanced": "De-vanced",
       rushi: "Rushi",
+      "hush-facebook": "Hush",
+      hush: "Hush",
       "hoo-dles": "Hoo-dles",
       hooman: "Hooman",
       paresh: "Paresh",

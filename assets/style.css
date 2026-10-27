@@ -1621,6 +1621,10 @@ h1 .accent {
   animation-delay: 0.24s;
 }
 
+.app:nth-child(6) {
+  animation-delay: 0.30s;
+}
+
 @keyframes app-enter {
   from {
     opacity: 0;
@@ -1667,6 +1671,10 @@ h1 .accent {
 
 .icon.ig {
   background: linear-gradient(155deg, #ee00da22, #ee00da08);
+}
+
+.icon.fb {
+  background: linear-gradient(155deg, #1877f222, #1877f208);
 }
 
 .app-name {
