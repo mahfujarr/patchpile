@@ -875,7 +875,10 @@ function showToast(message, duration = 4500) {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       const latestRun = data?.workflow_runs?.[0];
-      const runDate = latestRun?.updated_at || latestRun?.created_at;
+      const runDate =
+        latestRun?.run_started_at ||
+        latestRun?.created_at ||
+        latestRun?.updated_at;
       if (!runDate) throw new Error("No CI runs found");
       if (el) el.textContent = formatBuiltAt(runDate);
       startNextCheckCountdown(runDate);
