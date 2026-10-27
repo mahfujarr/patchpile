@@ -15,10 +15,7 @@ on:
           - piko-dev
           - rushi
           - devanced
-          - hoo-dles
-          - hooman
-          - paresh
-          - tiktok
+          - hush-facebook
 
   workflow_call:
     inputs:

@@ -2,7 +2,6 @@ strict-sigcheck = false
 cli-version = "dev"
 
 [YouTube-Experimental]
-enabled = true
 brand = "morphe-dev"
 apkmirror-dlurl = "https://www.apkmirror.com/apk/google-inc/youtube"
 arch = "arm64-v8a"
@@ -13,7 +12,6 @@ patcher-args = "-e 'Change header' -Ocustom=icons/YouTube/header -e 'Custom bran
 "github:MorpheApp/morphe-patches" = { version = "dev" }
 
 [YT-Music-Experimental]
-enabled = true
 brand = "morphe-dev"
 apkmirror-dlurl = "https://www.apkmirror.com/apk/google-inc/youtube-music"
 arch = "arm64-v8a"
@@ -24,7 +22,6 @@ patcher-args = "-e 'Change header' -Ocustom=icons/Music/header -e 'Custom brandi
 "github:MorpheApp/morphe-patches" = { version = "dev" }
 
 [Instagram-Experimental]
-enabled = true
 brand = "piko-dev"
 github-dlurl = "https://github.com/krvstek/uni-storage/releases/tag/instagram"
 apkmirror-dlurl = "https://www.apkmirror.com/apk/instagram/instagram-instagram"
@@ -52,7 +49,6 @@ patcher-args = "-e 'Change header' -Ocustom=icons/Music/header -e 'Custom brandi
 "github:MorpheApp/morphe-patches" = []
 
 [Instagram]
-enabled = true
 brand = "piko"
 github-dlurl = "https://github.com/krvstek/uni-storage/releases/tag/instagram"
 apkmirror-dlurl = "https://www.apkmirror.com/apk/instagram/instagram-instagram"
@@ -63,10 +59,8 @@ arch = "arm64-v8a"
 "github:crimera/piko" = []
 
 [Google-Photos]
-enabled = true
 brand = "rushi"
 apkmirror-dlurl = "https://www.apkmirror.com/apk/google-inc/photos/"
-version = "auto"
 arch = "arm64-v8a"
 patcher-args = "-e 'Enable DCIM folders backup control' -e 'GmsCore support' -e 'Spoof features' -OgooglePhotosSpoofProfile=pixel_xl -e 'Change package name' -OgooglePhotosAppName=Photos"
 
@@ -74,12 +68,18 @@ patcher-args = "-e 'Enable DCIM folders backup control' -e 'GmsCore support' -e 
 "github:rushiranpise/morphe-patches" = []
 
 [GPhotos]
-enabled = true
 brand = "devanced"
 apkmirror-dlurl = "https://www.apkmirror.com/apk/google-inc/photos/"
-version = "auto"
 arch = "arm64-v8a"
 patcher-args = "-e 'Enable DCIM folders backup control'"
 
 [GPhotos.patches]
 "github:RookieEnough/De-Vanced" = []
+
+[Facebook]
+brand = "hush-facebook"
+apkmirror-dlurl = "https://www.apkmirror.com/apk/facebook-2/facebook/"
+arch = "arm64-v8a"
+
+[Facebook.patches]
+"github:SysAdminDoc/Hushfacebook" = []
