@@ -362,6 +362,8 @@ function showToast(message, duration = 4500) {
         return `<div class="icon gph" aria-hidden="true"><img src="https://www.gstatic.com/images/branding/product/2x/photos_96dp.png" alt="" /></div>`;
       case "fb":
         return `<div class="icon fb" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="12" fill="#1877f2"/><path d="M16.671 15.469l.532-3.47h-3.328v-2.25c0-.949.465-1.874 1.956-1.874h1.514V4.922s-1.374-.235-2.686-.235c-2.741 0-4.533 1.662-4.533 4.669v2.002H7.078v3.47h3.047v8.385a12.18 12.18 0 0 0 3.75 0v-8.385h2.796z" fill="#ffffff"/></svg></div>`;
+      case "msg":
+        return `<div class="icon msg" aria-hidden="true"><svg viewBox="0 0 800 800"><defs><linearGradient id="wn-msg-grad" x1="0%" y1="100%" x2="100%" y2="0%"><stop offset="0%" stop-color="#0099ff"/><stop offset="60%" stop-color="#a033ff"/><stop offset="100%" stop-color="#ff5280"/></linearGradient></defs><path fill="url(#wn-msg-grad)" d="M400 0C174.7 0 0 165.1 0 388c0 116.6 47.8 217.4 125.6 287 6.5 5.8 10.5 14 10.7 22.8l2.2 71.2a32 32 0 0 0 44.9 28.3l79.4-35c6.7-3 14.3-3.5 21.4-1.6 36.5 10 75.3 15.4 115.8 15.4 225.3 0 400-165.1 400-388S625.3 0 400 0z"/><path fill="#ffffff" d="m159.8 501.5 117.5-186.4a60 60 0 0 1 86.8-16l93.5 70.1a24 24 0 0 0 28.9-.1l126.2-95.8c16.8-12.8 38.8 7.4 27.6 25.3L522.7 484.9a60 60 0 0 1-86.8 16l-93.5-70.1a24 24 0 0 0-28.9.1l-126.2 95.8c-16.8 12.8-38.8-7.3-27.5-25.2z"/></svg></div>`;
       default:
         return `<div class="icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 12h6m-3-3v6"/></svg></div>`;
     }
@@ -405,6 +407,8 @@ function showToast(message, duration = 4500) {
         appType = "ig";
       } else if (lower.includes("photo") || lower.includes("gphotos")) {
         appType = "gph";
+      } else if (lower.includes("messenger")) {
+        appType = "msg";
       } else if (lower.includes("facebook") || lower.includes("hush")) {
         appType = "fb";
       }
@@ -439,6 +443,9 @@ function showToast(message, duration = 4500) {
         } else if (lower.includes("photos") || lower.includes("gphotos")) {
           rawName = "Google Photos";
           appType = "gph";
+        } else if (lower.includes("messenger")) {
+          rawName = "Messenger";
+          appType = "msg";
         } else if (lower.includes("facebook")) {
           rawName = "Facebook";
           appType = "fb";
@@ -459,30 +466,11 @@ function showToast(message, duration = 4500) {
   }
 
   function getReleaseBrand(rel) {
-    if (!rel) return "Build";
+    if (!rel) return "build";
     const tag = rel.tag_name || "";
     const match = tag.match(/^\d+[\d.]*-(.+)$/);
     const raw = match ? match[1].toLowerCase() : tag.toLowerCase();
-    const brandMap = {
-      morphe: "Morphe",
-      "morphe-dev": "Morphe-dev",
-      piko: "Piko",
-      "piko-dev": "Piko-dev",
-      devanced: "De-vanced",
-      "de-vanced": "De-vanced",
-      rushi: "Rushi",
-      "hush-facebook": "Hush",
-      hush: "Hush",
-      "hoo-dles": "Hoo-dles",
-      hooman: "Hooman",
-      paresh: "Paresh",
-      tiktok: "TikTok",
-    };
-    if (brandMap[raw]) return brandMap[raw];
-    return raw
-      .split("-")
-      .map((s) => s.charAt(0).toUpperCase() + s.slice(1))
-      .join("-");
+    return raw;
   }
 
   let whatsNewListenersAttached = false;

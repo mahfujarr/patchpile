@@ -83,3 +83,12 @@ arch = "arm64-v8a"
 
 [Facebook.patches]
 "github:SysAdminDoc/Hushfacebook" = []
+
+[Messenger]
+brand = "hush-messenger"
+apkmirror-dlurl = "https://www.apkmirror.com/apk/facebook-2/messenger/"
+arch = "arm64-v8a"
+patcher-args = "-e 'Spoof package version'"
+
+[Messenger.patches]
+"github:SysAdminDoc/HushMessenger" = []

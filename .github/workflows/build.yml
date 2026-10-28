@@ -16,6 +16,7 @@ on:
           - rushi
           - devanced
           - hush-facebook
+          - hush-messenger
 
   workflow_call:
     inputs:
