@@ -200,6 +200,28 @@ function showToast(message, duration = 4500) {
   async function getLocalManifest(forceFresh = false) {
     if (!localManifest || forceFresh) {
       const cacheBust = forceFresh ? `?t=${Date.now()}` : "";
+
+      if (forceFresh) {
+        try {
+          await fetch(
+            "https://purge.jsdelivr.net/gh/mahfujarr/patchpile@main/assets/releases.json",
+          );
+        } catch (_) {}
+      }
+
+      try {
+        const jsdRes = await fetch(
+          `https://cdn.jsdelivr.net/gh/mahfujarr/patchpile@main/assets/releases.json${cacheBust}`,
+          {
+            cache: forceFresh ? "reload" : "no-store",
+          },
+        );
+        if (jsdRes.ok) {
+          localManifest = await jsdRes.json();
+          return localManifest;
+        }
+      } catch (_) {}
+
       try {
         const manifestRes = await fetch(
           `https://raw.githubusercontent.com/mahfujarr/patchpile/main/assets/releases.json${cacheBust}`,
