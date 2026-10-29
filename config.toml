@@ -92,3 +92,13 @@ patcher-args = "-e 'Spoof package version'"
 
 [Messenger.patches]
 "github:SysAdminDoc/HushMessenger" = []
+
+[HushGram]
+app-name = "Instagram"
+brand = "hush-instagram"
+apkmirror-dlurl = "https://www.apkmirror.com/apk/instagram/instagram-instagram"
+arch = "arm64-v8a"
+patcher-args = "-e 'View DM photos and videos anonymously' -e 'Change version code' -e 'Pure black dark mode'"
+
+[HushGram.patches]
+"github:SysAdminDoc/HushGram" = []
