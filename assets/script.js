@@ -201,26 +201,23 @@ function showToast(message, duration = 4500) {
     if (!localManifest || forceFresh) {
       const cacheBust = forceFresh ? `?t=${Date.now()}` : "";
 
+      // If a hard refresh is requested (e.g. Refresh button), fetch directly via GitHub Contents API
+      // to bypass Fastly's 5-minute CDN cache on raw.githubusercontent.com
       if (forceFresh) {
         try {
-          await fetch(
-            "https://purge.jsdelivr.net/gh/mahfujarr/patchpile@main/assets/releases.json",
+          const apiRes = await fetch(
+            "https://api.github.com/repos/mahfujarr/patchpile/contents/assets/releases.json",
+            {
+              headers: { Accept: "application/vnd.github.raw+json" },
+              cache: "no-store",
+            },
           );
+          if (apiRes.ok) {
+            localManifest = await apiRes.json();
+            return localManifest;
+          }
         } catch (_) {}
       }
-
-      try {
-        const jsdRes = await fetch(
-          `https://cdn.jsdelivr.net/gh/mahfujarr/patchpile@main/assets/releases.json${cacheBust}`,
-          {
-            cache: forceFresh ? "reload" : "no-store",
-          },
-        );
-        if (jsdRes.ok) {
-          localManifest = await jsdRes.json();
-          return localManifest;
-        }
-      } catch (_) {}
 
       try {
         const manifestRes = await fetch(
