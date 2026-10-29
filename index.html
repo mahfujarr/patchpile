@@ -7,13 +7,13 @@
   <title>patchpile</title>
   <meta name="description"
     content="Ad-free, de-Googled APK builds of YouTube, YT Music, Google Photos and Instagram. Pulled straight from the latest GitHub Actions release.">
-  <link rel="canonical" href="https://mahfujarr.me/patchpile/">
+  <link rel="canonical" href="https://mahfujarr.xyz/patchpile/">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="patchpile">
   <meta property="og:title" content="patchpile - patched APK releases">
   <meta property="og:description"
     content="Ad-free, de-Googled APK builds of YouTube, YT Music, Google Photos and Instagram.">
-  <meta property="og:url" content="https://mahfujarr.me/patchpile/">
+  <meta property="og:url" content="https://mahfujarr.xyz/patchpile/">
   <meta name="twitter:card" content="summary">
   <meta name="twitter:title" content="patchpile - patched APK releases">
   <meta name="twitter:description"
@@ -397,7 +397,7 @@
         </a>
       </div>
 
-      <div class="app" data-build-state="stable" data-repo="mahfujarr/patchpile" data-patch-source="piko"
+      <div class="app ig-app" data-build-state="stable" data-brand-state="piko" data-repo="mahfujarr/patchpile" data-patch-source="piko"
         data-asset-match="instagram-piko">
         <div class="icon ig">
           <svg viewBox="0 0 24 24">
@@ -416,31 +416,44 @@
           </svg>
         </div>
         <div class="app-info">
-          <div class="app-name"><span class="app-name-label stable-name">Instagram <span
-                class="patch">piko</span></span><span class="app-name-label experimental-name">Instagram <span
-                class="patch">piko-dev</span></span></div>
-          <div class="build-variants" role="group" aria-label="Choose Instagram build">
-            <button class="build-variant-btn" type="button" data-build="stable" aria-pressed="true">stable</button>
-            <button class="build-variant-btn" type="button" data-build="experimental"
-              aria-pressed="false">experimental</button>
+          <div class="app-name">
+            <span class="app-name-label piko-stable-name">Instagram <span class="patch">piko</span></span>
+            <span class="app-name-label piko-exp-name">Instagram <span class="patch">piko-dev</span></span>
+            <span class="app-name-label hush-name">Instagram <span class="patch">hush</span></span>
           </div>
-          <div class="app-desc">Ad-free feed, download stories &amp; reels, no tracking.</div>
-          <div class="app-version">
+          <div class="build-variants-wrapper" style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 6px;">
+            <div class="build-variants brand-variants" role="group" aria-label="Choose Instagram brand">
+              <button class="build-variant-btn brand-btn" type="button" data-brand="piko" aria-pressed="true">piko</button>
+              <button class="build-variant-btn brand-btn" type="button" data-brand="hush" aria-pressed="false">hush</button>
+            </div>
+            <span class="variant-divider" aria-hidden="true"></span>
+            <div class="build-variants version-variants" role="group" aria-label="Choose Piko build channel">
+              <button class="build-variant-btn version-btn" type="button" data-build="stable" aria-pressed="true">stable</button>
+              <button class="build-variant-btn version-btn" type="button" data-build="experimental" aria-pressed="false">experimental</button>
+            </div>
+          </div>
+          <div class="app-desc piko-desc">Ad-free feed, download stories &amp; reels, no tracking.</div>
+          <div class="app-desc hush-desc">Ad-free feed, download media, view DMs anonymously, pure black mode.</div>
+
+          <!-- Piko Stable View -->
+          <div class="app-version piko-version">
             <span class="v-num"></span>
             <span class="f-size skel"></span>
             <span class="f-built skel"></span>
           </div>
-          <details class="changelog-menu">
+          <details class="changelog-menu piko-changelog">
             <summary>What's new?</summary>
             <div class="changelog-content">Loading release notes...</div>
             <a class="changelog-link" href="https://github.com/mahfujarr/patchpile/releases" target="_blank"
               rel="noopener">View full release</a>
           </details>
+
+          <!-- Alternate / Exp Builds View -->
           <div class="app-exp">
-            <details class="exp-menu">
-              <summary>Experimental build</summary>
+            <div class="exp-menu">
               <div class="exp-list">
-                <div class="exp-item" data-repo="mahfujarr/patchpile" data-patch-source="piko-dev"
+                <!-- Piko Exp -->
+                <div class="exp-item piko-exp-item" data-repo="mahfujarr/patchpile" data-patch-source="piko-dev"
                   data-asset-match="instagram-experimental">
                   <div class="exp-main">
                     <div class="exp-version">
@@ -463,18 +476,52 @@
                     <span>Download</span>
                   </a>
                 </div>
+
+                <!-- Hush Instagram -->
+                <div class="exp-item hush-item" data-repo="mahfujarr/patchpile" data-patch-source="hush-instagram"
+                  data-asset-match="instagram-hush-instagram">
+                  <div class="exp-main">
+                    <div class="exp-version">
+                      <span class="v-num"></span>
+                      <span class="f-size skel"></span>
+                      <span class="f-built skel"></span>
+                    </div>
+                    <details class="changelog-menu">
+                      <summary>What's new?</summary>
+                      <div class="changelog-content">Loading release notes...</div>
+                      <a class="changelog-link" href="https://github.com/mahfujarr/patchpile/releases" target="_blank"
+                        rel="noopener">View full release</a>
+                    </details>
+                  </div>
+                  <a class="dl-btn" href="https://github.com/mahfujarr/patchpile/releases">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"
+                      stroke-linejoin="round">
+                      <path d="M12 3v12m0 0 4-4m-4 4-4-4M5 21h14" />
+                    </svg>
+                    <span>Download</span>
+                  </a>
+                </div>
               </div>
-            </details>
+            </div>
           </div>
         </div>
-        <a class="dl-btn" href="https://github.com/mahfujarr/patchpile/releases">
+
+        <!-- Download Buttons for each build -->
+        <a class="dl-btn dl-piko-stable" href="https://github.com/mahfujarr/patchpile/releases">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"
             stroke-linejoin="round">
             <path d="M12 3v12m0 0 4-4m-4 4-4-4M5 21h14" />
           </svg>
           <span>Download</span>
         </a>
-        <a class="dl-btn experimental-dl-btn" href="https://github.com/mahfujarr/patchpile/releases">
+        <a class="dl-btn experimental-dl-btn dl-piko-exp" href="https://github.com/mahfujarr/patchpile/releases">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"
+            stroke-linejoin="round">
+            <path d="M12 3v12m0 0 4-4m-4 4-4-4M5 21h14" />
+          </svg>
+          <span>Download</span>
+        </a>
+        <a class="dl-btn dl-hush" href="https://github.com/mahfujarr/patchpile/releases">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"
             stroke-linejoin="round">
             <path d="M12 3v12m0 0 4-4m-4 4-4-4M5 21h14" />
@@ -625,7 +672,7 @@
 
     <footer>
       <span>©
-        <script>document.write(new Date().getFullYear());</script> <a href="https://mahfujarr.me">
+        <script>document.write(new Date().getFullYear());</script> <a href="https://mahfujarr.xyz">
           Mahfujar Rahman</a>
       </span>
       <div class="foot-links" style="display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">

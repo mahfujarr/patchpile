@@ -1578,6 +1578,130 @@ h1 .accent {
   gap: 0;
 }
 
+/* Instagram Multi-Brand & Channel Display Rules */
+.app.ig-app .app-name-label {
+  display: none !important;
+}
+.app.ig-app[data-brand-state="piko"][data-build-state="stable"] .piko-stable-name {
+  display: inline !important;
+}
+.app.ig-app[data-brand-state="piko"][data-build-state="experimental"] .piko-exp-name {
+  display: inline !important;
+}
+.app.ig-app[data-brand-state="hush"] .hush-name {
+  display: inline !important;
+}
+
+.app.ig-app[data-brand-state="hush"] .piko-desc {
+  display: none !important;
+}
+.app.ig-app:not([data-brand-state="hush"]) .hush-desc {
+  display: none !important;
+}
+
+.variant-divider {
+  display: inline-block;
+  width: 1px;
+  height: 20px;
+  background: var(--line);
+  margin: 0 4px;
+  align-self: center;
+  flex-shrink: 0;
+}
+
+.app.ig-app[data-brand-state="hush"] .version-variants,
+.app.ig-app[data-brand-state="hush"] .variant-divider {
+  display: none !important;
+}
+
+.app.ig-app .app-exp {
+  margin-top: 0 !important;
+}
+
+.app.ig-app .exp-menu {
+  border: 0 !important;
+  background: transparent !important;
+  overflow: visible !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.app.ig-app .exp-menu > summary {
+  display: none !important;
+}
+
+.app.ig-app .exp-list {
+  display: block !important;
+  padding: 0 !important;
+  gap: 0 !important;
+}
+
+.app.ig-app .exp-item {
+  border: 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+  display: none !important;
+}
+
+.app.ig-app .exp-main {
+  width: 100% !important;
+  flex: 1 1 auto !important;
+  gap: 0 !important;
+}
+
+.app.ig-app .exp-item > .dl-btn {
+  display: none !important;
+}
+
+.app.ig-app[data-brand-state="piko"][data-build-state="stable"] .piko-version,
+.app.ig-app[data-brand-state="piko"][data-build-state="stable"] .piko-changelog {
+  display: block !important;
+}
+.app.ig-app[data-brand-state="piko"][data-build-state="stable"] .app-exp {
+  display: none !important;
+}
+
+.app.ig-app[data-brand-state="piko"][data-build-state="experimental"] .piko-version,
+.app.ig-app[data-brand-state="piko"][data-build-state="experimental"] .piko-changelog {
+  display: none !important;
+}
+.app.ig-app[data-brand-state="piko"][data-build-state="experimental"] .app-exp {
+  display: block !important;
+}
+.app.ig-app[data-brand-state="piko"][data-build-state="experimental"] .piko-exp-item {
+  display: block !important;
+}
+.app.ig-app[data-brand-state="piko"][data-build-state="experimental"] .hush-item {
+  display: none !important;
+}
+
+.app.ig-app[data-brand-state="hush"] .piko-version,
+.app.ig-app[data-brand-state="hush"] .piko-changelog {
+  display: none !important;
+}
+.app.ig-app[data-brand-state="hush"] .app-exp {
+  display: block !important;
+}
+.app.ig-app[data-brand-state="hush"] .hush-item {
+  display: block !important;
+}
+.app.ig-app[data-brand-state="hush"] .piko-exp-item {
+  display: none !important;
+}
+
+.app.ig-app > .dl-btn {
+  display: none !important;
+}
+.app.ig-app[data-brand-state="piko"][data-build-state="stable"] > .dl-piko-stable {
+  display: flex !important;
+}
+.app.ig-app[data-brand-state="piko"][data-build-state="experimental"] > .dl-piko-exp {
+  display: flex !important;
+}
+.app.ig-app[data-brand-state="hush"] > .dl-hush {
+  display: flex !important;
+}
+
 .app {
   border-bottom: 1px solid var(--line-soft);
   padding: 30px 0;

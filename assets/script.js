@@ -59,23 +59,48 @@ function showToast(message, duration = 4500) {
   document.querySelectorAll(".build-variant-btn").forEach((button) => {
     button.addEventListener("click", () => {
       const app = button.closest(".app");
+      if (!app) return;
+
+      // Handle brand toggle (e.g. Instagram piko vs hush)
+      if (button.dataset.brand) {
+        const brand = button.dataset.brand;
+        app.dataset.brandState = brand;
+        const experimentalMenu = app?.querySelector(".exp-menu");
+        if (experimentalMenu) {
+          experimentalMenu.open = true;
+          experimentalMenu.setAttribute("open", "");
+        }
+        app.querySelectorAll(".brand-btn").forEach((btn) => {
+          btn.setAttribute("aria-pressed", String(btn.dataset.brand === brand));
+        });
+        const changelogOpen = [...app.querySelectorAll(".changelog-menu")].some(
+          (menu) => menu.open,
+        );
+        setAppChangelogOpen(app, changelogOpen);
+        return;
+      }
+
       const experimentalMenu = app?.querySelector(".exp-menu");
       const selectedBuild = button.dataset.build;
-      if (!app || !experimentalMenu || !selectedBuild) return;
+      if (!selectedBuild) return;
 
       const changelogOpen = [...app.querySelectorAll(".changelog-menu")].some(
         (menu) => menu.open,
       );
       app.dataset.buildState = selectedBuild;
       if (selectedBuild === "experimental") {
-        experimentalMenu.open = true;
-        experimentalMenu.setAttribute("open", "");
+        if (experimentalMenu) {
+          experimentalMenu.open = true;
+          experimentalMenu.setAttribute("open", "");
+        }
       } else {
-        experimentalMenu.open = false;
-        experimentalMenu.removeAttribute("open");
+        if (experimentalMenu && !app.classList.contains("ig-app")) {
+          experimentalMenu.open = false;
+          experimentalMenu.removeAttribute("open");
+        }
       }
       setAppChangelogOpen(app, changelogOpen);
-      app.querySelectorAll(".build-variant-btn").forEach((variantButton) => {
+      app.querySelectorAll(".build-variant-btn:not(.brand-btn)").forEach((variantButton) => {
         variantButton.setAttribute(
           "aria-pressed",
           String(variantButton.dataset.build === selectedBuild),
@@ -973,9 +998,14 @@ function showToast(message, duration = 4500) {
         }
 
         if (!data || !asset) {
-          if (dlBtn) {
-            dlBtn.textContent = "⚠ Build not found";
-            dlBtn.classList.add("error");
+          const appParent = card.closest(".app");
+          const targetDlBtn =
+            card.dataset.patchSource === "hush-instagram"
+              ? appParent?.querySelector(".dl-hush") || dlBtn
+              : dlBtn;
+          if (targetDlBtn) {
+            targetDlBtn.textContent = "⚠ Build not found";
+            targetDlBtn.classList.add("error");
           }
           sizeEl?.remove();
           builtEl?.remove();
@@ -1015,18 +1045,20 @@ function showToast(message, duration = 4500) {
           sizeEl.classList.remove("skel");
         }
         if (card.classList.contains("exp-item")) {
-          const experimentalBtn = card
-            .closest(".app")
-            ?.querySelector(".experimental-dl-btn");
-          if (experimentalBtn) {
-            experimentalBtn.classList.remove("error");
-            experimentalBtn.innerHTML = `
+          const appParent = card.closest(".app");
+          const targetDlBtn =
+            card.dataset.patchSource === "hush-instagram"
+              ? appParent?.querySelector(".dl-hush")
+              : appParent?.querySelector(".experimental-dl-btn");
+          if (targetDlBtn) {
+            targetDlBtn.classList.remove("error");
+            targetDlBtn.innerHTML = `
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M12 3v12m0 0 4-4m-4 4-4-4M5 21h14" />
               </svg>
               <span>Download</span>
             `;
-            experimentalBtn.href = asset.browser_download_url;
+            targetDlBtn.href = asset.browser_download_url;
           }
         }
 
