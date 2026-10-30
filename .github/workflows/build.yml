@@ -17,6 +17,7 @@ on:
           - devanced
           - hush-facebook
           - hush-messenger
+          - hush-instagram
 
   workflow_call:
     inputs:

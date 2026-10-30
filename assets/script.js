@@ -1200,10 +1200,10 @@ if (!document.getElementById("spinner-style")) {
       sessionStorage.setItem("patchpile-hit", "true");
     }
 
-    counterEl.textContent = Number(count).toLocaleString() + " times";
+    counterEl.textContent = Number(count).toLocaleString();
   } catch (e) {
     console.error("Visitor counter error:", e);
-    counterEl.textContent = "online";
+    counterEl.textContent = "Unavailable";
   }
 })();
 
