@@ -1,5 +1,4 @@
 strict-sigcheck = false
-cli-version = "dev"
 
 [YouTube-Experimental]
 brand = "morphe-dev"
