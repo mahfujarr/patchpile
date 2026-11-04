@@ -28,9 +28,24 @@ _KNOWN_PREFIXES = ("gitlab:", "github:")
 class PrebuiltsError(Exception):
     pass
 
-def _ver_key(ver: str) -> tuple[int, ...]:
-    base = ver.split("-")[0]
-    return tuple(int(x) for x in re.findall(r"\d+", base)) or (0,)
+def _ver_key(ver: str) -> tuple[tuple[int, ...], int, tuple[int, ...]]:
+    m = re.search(r"(\d+(?:\.\d+)*)(?:-([a-zA-Z0-9.]+))?", ver)
+    if not m:
+        nums = tuple(int(x) for x in re.findall(r"\d+", ver))
+        return (nums, 1, ())
+
+    parts = [int(x) for x in m.group(1).split(".")]
+    while len(parts) < 3:
+        parts.append(0)
+    base_nums = tuple(parts)
+
+    suffix = m.group(2)
+    if suffix:
+        suffix_clean = re.sub(r"\.(mpp|jar|apk|apkm)$", "", suffix)
+        if re.search(r"(dev|alpha|beta|rc|pre)", suffix_clean, re.I):
+            suffix_nums = tuple(int(x) for x in re.findall(r"\d+", suffix_clean))
+            return (base_nums, 0, suffix_nums)
+    return (base_nums, 1, ())
 
 def _strip_src_prefix(src: str) -> str:
     for prefix in _KNOWN_PREFIXES:
