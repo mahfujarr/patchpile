@@ -204,21 +204,33 @@ jobs:
       - name: Install dependencies
         run: uv sync --frozen
 
-      - name: Check if any APKs were uploaded
+      - name: Check if all builds succeeded and APKs were uploaded
         id: check
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ needs.prepare.outputs.version }}
+          RUN_RESULT: ${{ needs.run.result }}
         run: |
+          if [ "$RUN_RESULT" != "success" ]; then
+            echo "::error::One or more matrix builds failed. Aborting release."
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
           has=$(gh release view "$TAG" \
             --repo "$GITHUB_REPOSITORY" \
             --json assets \
             --jq '[.assets[].name | select(endswith(".apk"))] | length > 0')
 
-          echo "has_apks=${has}" >> "$GITHUB_OUTPUT"
+          if [ "$has" != "true" ]; then
+            echo "::error::No APK assets found in release. Aborting release."
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Download logs from draft release
-        if: steps.check.outputs.has_apks == 'true'
+        if: steps.check.outputs.publish == 'true'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ needs.prepare.outputs.version }}
@@ -237,7 +249,7 @@ jobs:
             xargs -I{} gh api --method DELETE "{}"
 
       - name: Combine logs and finalize release
-        if: steps.check.outputs.has_apks == 'true'
+        if: steps.check.outputs.publish == 'true'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ needs.prepare.outputs.version }}
@@ -261,17 +273,19 @@ jobs:
               --notes-file final.md
           fi
 
-      - name: Delete empty draft if no APKs
-        if: steps.check.outputs.has_apks != 'true'
+      - name: Delete draft release if build failed or no APKs
+        if: steps.check.outputs.publish != 'true'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG: ${{ needs.prepare.outputs.version }}
         run: |
+          echo "Build was incomplete or failed. Deleting draft release and tag: $TAG"
           gh release delete "$TAG" \
             --repo "$GITHUB_REPOSITORY" \
             --cleanup-tag \
             --yes || true
           git push origin --delete "$TAG" 2>/dev/null || true
+          exit 1
 
   update-manifest-and-notify:
     needs: [prepare, release]
