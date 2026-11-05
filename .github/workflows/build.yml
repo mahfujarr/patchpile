@@ -59,11 +59,28 @@ jobs:
       - name: Install dependencies
         run: uv sync --frozen
 
+      - name: Set matrix based on patch source
+        id: set-matrix
+        env:
+          FILTER_CHANGELOG: ${{ inputs.filter_changelog }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          RESULT="$(uv run python -m src.scripts.matrix get-matrix '${{ inputs.patch_source }}')"
+          echo "matrix=$(echo "$RESULT" | jq -c '{include}')" >> "$GITHUB_OUTPUT"
+          echo "prerelease=$(echo "$RESULT" | jq -r '.prerelease')" >> "$GITHUB_OUTPUT"
+
       - name: Prepare version and draft release
         id: version
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          MATRIX_JSON: ${{ steps.set-matrix.outputs.matrix }}
         run: |
+          APPS_COUNT=$(echo "$MATRIX_JSON" | jq '.include | length' 2>/dev/null || echo 0)
+          if [ -z "$APPS_COUNT" ] || [ "$APPS_COUNT" -eq 0 ]; then
+            echo "::error::No apps to build for ${{ inputs.patch_source }}. Aborting."
+            exit 1
+          fi
+
           TODAY="$(date +%y.%m.%d)"
           SOURCE="${{ inputs.patch_source }}"
 
@@ -91,16 +108,6 @@ jobs:
             --title "$VER" \
             --notes "" \
             --repo "$GITHUB_REPOSITORY"
-
-      - name: Set matrix based on patch source
-        id: set-matrix
-        env:
-          FILTER_CHANGELOG: ${{ inputs.filter_changelog }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          RESULT="$(uv run python -m src.scripts.matrix get-matrix '${{ inputs.patch_source }}')"
-          echo "matrix=$(echo "$RESULT" | jq -c '{include}')" >> "$GITHUB_OUTPUT"
-          echo "prerelease=$(echo "$RESULT" | jq -r '.prerelease')" >> "$GITHUB_OUTPUT"
 
   run:
     needs: prepare
