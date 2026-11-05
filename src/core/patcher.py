@@ -138,7 +138,7 @@ class PatcherCLI:
         active_auto = {p for p in auto_patches if p}
         p_args: list[str] = ["-f"] if force else []
         for src, spec in patches.items():
-            p_args.extend(("--patches", str(self.mpp_map[(src, spec["version"])])))
+            p_args.extend(("--patches", str(self.mpp_map[(src, spec["version"])].resolve())))
             for p in spec["include"]:
                 if p in active_auto:
                     wpr(f"You can't include '{p}' patch as that's done by builder automatically")
@@ -156,21 +156,23 @@ class PatcherCLI:
         return p_args
 
     def patch(self, stock_apk: Path, output_apk: Path, patch_args: list[str]) -> None:
-        base_cmd = ["-jar", self.cli_jar, "patch", stock_apk, "-o", output_apk]
+        stock_apk_abs = stock_apk.resolve()
+        output_apk_abs = output_apk.resolve()
+        base_cmd = ["-jar", self.cli_jar.resolve(), "patch", stock_apk_abs, "-o", output_apk_abs]
         ks_args: list[str] = []
         if self.ks_path and (ks_pass := os.getenv("KEYSTORE_PASS")) and (ks_alias := os.getenv("KEYSTORE_ALIAS")):
-            ks_args = [f"--keystore={self.ks_path}", f"--keystore-entry-password={ks_pass}", f"--keystore-password={ks_pass}", f"--signer={ks_alias}", f"--keystore-entry-alias={ks_alias}"]
+            ks_args = [f"--keystore={self.ks_path.resolve()}", f"--keystore-entry-password={ks_pass}", f"--keystore-password={ks_pass}", f"--signer={ks_alias}", f"--keystore-entry-alias={ks_alias}"]
         elif Path("morphe.keystore").exists():
-            ks_args = ["--keystore=morphe.keystore"]
+            ks_args = [f"--keystore={Path('morphe.keystore').resolve()}"]
 
         pr(" ".join(_redact_args(["java", *base_cmd, *ks_args, *patch_args])))
         try:
             _run_java(*base_cmd, *ks_args, *patch_args, capture=False)
         except subprocess.TimeoutExpired:
-            output_apk.unlink(missing_ok=True)
+            output_apk_abs.unlink(missing_ok=True)
             raise PatcherError(f"Patching '{stock_apk.name}' failed, process timed out after 10 minutes") from None
         except PatcherError as exc:
-            output_apk.unlink(missing_ok=True)
+            output_apk_abs.unlink(missing_ok=True)
             raise PatcherError(f"Patching '{stock_apk.name}' failed:\n{exc}") from exc
 
     def check_signature(self, apk: Path, pkg_name: str) -> bool:
