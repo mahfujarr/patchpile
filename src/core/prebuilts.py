@@ -47,6 +47,8 @@ def _ver_key(ver: str) -> tuple[tuple[int, ...], int, tuple[int, ...]]:
             return (base_nums, 0, suffix_nums)
     return (base_nums, 1, ())
 
+ver_key = _ver_key
+
 def _strip_src_prefix(src: str) -> str:
     for prefix in _KNOWN_PREFIXES:
         if src.startswith(prefix):
