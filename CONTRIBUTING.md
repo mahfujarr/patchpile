@@ -107,7 +107,6 @@ apkmirror-dlurl = "https://www.apkmirror.com/apk/inc/app"
 | `patcher-args` | Extra arguments passed directly to Morphe CLI | `-` | Per-app |
 | `skip-sigcheck` | Completely bypasses signature checks for this app (see note below) | `false` | **Per-app only** |
 | `track-apk` | Trigger builds when a newer APK version is found on download source, even if there are no new patch releases (requires `version` other than `auto`) | `false` | Global / Per-app |
-| `slim-bundle` | Strip foreign language packs and obsolete low-res screen densities from split APK bundles before patching | `true` | Global / Per-app |
 | `enabled` | Set to `false` to skip this entry | `true` | Per-app |
 
 **`[AppName.patches]` table** - defines which patch bundles to use and which patches to apply from each:

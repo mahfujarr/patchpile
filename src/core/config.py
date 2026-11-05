@@ -34,7 +34,6 @@ class Config:
     brand: str
     strict_sigcheck: bool
     track_apk: bool
-    slim_bundle: bool
 
 class PatchSpec(TypedDict):
     version: str
@@ -59,7 +58,6 @@ class AppEntry:
     enabled: bool
     changelog_keywords: list[str]
     track_apk: bool
-    slim_bundle: bool
 
 def load_toml(path: Path) -> dict[str, object]:
     with path.open("rb") as fp:
@@ -80,7 +78,6 @@ def parse_config(data: dict[str, object]) -> Config:
         cli_source=str(data.get("cli-source", "github:MorpheApp/morphe-desktop")),
         strict_sigcheck=_parse_bool(data, "strict-sigcheck", True),
         track_apk=_parse_bool(data, "track-apk", False),
-        slim_bundle=_parse_bool(data, "slim-bundle", True),
     )
 
 def parse_app_entries(data: dict[str, object], main: Config) -> list[AppEntry]:
@@ -139,6 +136,5 @@ def parse_app_entries(data: dict[str, object], main: Config) -> list[AppEntry]:
             enabled=_parse_bool(t, "enabled", True),
             changelog_keywords=keywords,
             track_apk=_parse_bool(t, "track-apk", main.track_apk),
-            slim_bundle=_parse_bool(t, "slim-bundle", main.slim_bundle),
         ))
     return entries
