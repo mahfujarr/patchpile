@@ -14,18 +14,151 @@
 
 import json  # noqa: I001
 import os
+import re
 import sys
 from datetime import UTC, datetime
+from pathlib import Path
 from typing import Any
 
 from src.core.config import CONFIG_PATH, AppEntry, load_toml, parse_app_entries, parse_config
-from src.core.logger import IS_GITHUB, abort, epr, wpr
+from src.core.logger import IS_GITHUB, abort, epr, pr, wpr
 from src.core.network import NetworkManager, ResourceNotFoundError
+from src.core.prebuilts import get_highest_ver, ver_key
+
+_APK_ASSET_RE = re.compile(r"^([a-z0-9\-]+)-v(.+?)(?:-(?:all|arm64-v8a|armeabi-v7a|x86_64|x86))?\.apk$", re.IGNORECASE)
+_CACHE_DIR = Path(".cache")
+_FAILED_BUILDS_FILE = _CACHE_DIR / "failed_builds.json"
 
 
 def _require_ci(script: str) -> None:
     if not IS_GITHUB:
         wpr(f"'{script}' running outside GitHub Actions environment")
+
+def _load_failed_builds() -> dict[str, dict[str, str]]:
+    if _FAILED_BUILDS_FILE.is_file():
+        try:
+            return json.loads(_FAILED_BUILDS_FILE.read_text(encoding="utf-8"))
+        except Exception as exc:
+            wpr(f"Failed to read failed builds cache: {exc}")
+    return {}
+
+def _save_failed_builds(data: dict[str, dict[str, str]]) -> None:
+    try:
+        _CACHE_DIR.mkdir(parents=True, exist_ok=True)
+        _FAILED_BUILDS_FILE.write_text(json.dumps(data, indent=2), encoding="utf-8")
+    except Exception as exc:
+        wpr(f"Failed to write failed builds cache: {exc}")
+
+def ensure_cache_file() -> None:
+    if not _FAILED_BUILDS_FILE.is_file():
+        _save_failed_builds({})
+
+def is_build_failed_previously(table_id: str, version: str, current_upstream_date: str) -> bool:
+    data = _load_failed_builds()
+    entry = data.get(table_id)
+    if not entry:
+        return False
+    if entry.get("version") != version:
+        return False
+    failed_date = entry.get("upstream_date", "")
+    if current_upstream_date and failed_date:
+        try:
+            if datetime.fromisoformat(current_upstream_date) > datetime.fromisoformat(failed_date):
+                return False
+        except Exception:
+            pass
+    return True
+
+def record_failures(source: str, matrix_json: str, tag: str) -> None:
+    ensure_cache_file()
+    source_lower = source.lower().replace(" ", "-").replace("de-vanced", "devanced")
+    try:
+        matrix_data = json.loads(matrix_json)
+        table_ids = {item["id"] for item in matrix_data.get("include", []) if "id" in item}
+    except Exception as exc:
+        epr(f"Failed to parse matrix JSON: {exc}")
+        return
+
+    repo = os.getenv("GITHUB_REPOSITORY")
+    if not repo:
+        epr("GITHUB_REPOSITORY not set")
+        return
+
+    with NetworkManager() as net:
+        uploaded_base_names: set[str] = set()
+        try:
+            rel_raw = net.get(f"https://api.github.com/repos/{repo}/releases/tags/{tag}", headers=net.gh_headers)
+            rel_data = json.loads(rel_raw)
+            for asset in rel_data.get("assets", []):
+                name = str(asset.get("name") or "")
+                if m := _APK_ASSET_RE.match(name):
+                    uploaded_base_names.add(m.group(1).lower().replace("de-vanced", "devanced"))
+        except Exception as exc:
+            epr(f"Failed to check draft release assets: {exc}")
+
+        entries = {e.table: e for e in _load_entries() if e.table in table_ids}
+        failed_cache = _load_failed_builds()
+        scrapers: dict[str, Any] = {}
+
+        for table_id, entry in entries.items():
+            base_name = f"{entry.app_name.lower().replace(' ', '-')}-{source_lower}"
+            if base_name in uploaded_base_names:
+                failed_cache.pop(table_id, None)
+                continue
+
+            source_ver = _fetch_latest_source_version(entry, net, scrapers) if entry.dl_urls else None
+            if not source_ver and entry.version not in ("auto", "latest", "exp"):
+                source_ver = entry.version
+
+            patches_source = next(iter(entry.patches), "")
+            upstream_date = ""
+            if patches_source:
+                is_dev = any(spec["version"] == "dev" for spec in entry.patches.values())
+                try:
+                    _, upstream_date = _fetch_latest_release(patches_source, net, version="dev" if is_dev else "latest")
+                except Exception:
+                    pass
+
+            if source_ver:
+                pr(f"Recording failed build for '{table_id}' (version: {source_ver})")
+                failed_cache[table_id] = {
+                    "version": source_ver,
+                    "upstream_date": upstream_date,
+                    "failed_at": datetime.now(UTC).isoformat(),
+                }
+
+        _save_failed_builds(failed_cache)
+
+def clear_failures(tag: str) -> None:
+    ensure_cache_file()
+    repo = os.getenv("GITHUB_REPOSITORY")
+    if not repo:
+        return
+
+    with NetworkManager() as net:
+        try:
+            rel_raw = net.get(f"https://api.github.com/repos/{repo}/releases/tags/{tag}", headers=net.gh_headers)
+            rel_data = json.loads(rel_raw)
+            uploaded_base_names: set[str] = set()
+            for asset in rel_data.get("assets", []):
+                name = str(asset.get("name") or "")
+                if m := _APK_ASSET_RE.match(name):
+                    uploaded_base_names.add(m.group(1).lower().replace("de-vanced", "devanced"))
+
+            entries = _load_entries()
+            failed_cache = _load_failed_builds()
+            changed = False
+            for entry in entries:
+                brand = entry.brand.lower().replace(" ", "-").replace("de-vanced", "devanced")
+                base_name = f"{entry.app_name.lower().replace(' ', '-')}-{brand}"
+                if base_name in uploaded_base_names and entry.table in failed_cache:
+                    pr(f"Clearing failure cache for '{entry.table}'")
+                    del failed_cache[entry.table]
+                    changed = True
+            if changed:
+                _save_failed_builds(failed_cache)
+        except Exception as exc:
+            epr(f"Failed to clear failures: {exc}")
 
 def _fetch_latest_release(source: str, net: NetworkManager, version: str = "latest") -> tuple[str, str]:
     scheme, clean_src = source.split(":", 1)
@@ -58,72 +191,149 @@ def _fetch_latest_release(source: str, net: NetworkManager, version: str = "late
         upstream_date = str(upstream_rel.get("published_at") or "")
     return changelog_text, upstream_date
 
-def _fetch_our_releases(repo: str, net: NetworkManager) -> dict[str, str]:
+def _fetch_our_releases(repo: str, net: NetworkManager) -> tuple[dict[str, str], dict[str, dict[str, str]]]:
     our_releases_by_brand: dict[str, str] = {}
+    built_versions_by_brand: dict[str, dict[str, str]] = {}
     try:
         our_releases_raw = net.get(f"https://api.github.com/repos/{repo}/releases?per_page=100", headers=net.gh_headers)
         releases: list[dict[str, Any]] = json.loads(our_releases_raw)
+        releases = [r for r in releases if not r.get("draft")]
+        releases.sort(
+            key=lambda r: datetime.fromisoformat(r["published_at"]) if r.get("published_at") else (datetime.fromisoformat(r["created_at"]) if r.get("created_at") else datetime.min.replace(tzinfo=UTC)),
+            reverse=True,
+        )
         for rel in releases:
             tag = str(rel.get("tag_name") or "")
-            brand = tag.split("-", 1)[1] if "-" in tag else ""
-            if brand:
-                pub_date = str(rel.get("published_at") or "")
-                if pub_date and (brand not in our_releases_by_brand or datetime.fromisoformat(pub_date) > datetime.fromisoformat(our_releases_by_brand[brand])):
-                    our_releases_by_brand[brand] = pub_date
+            brand = (tag.split("-", 1)[1] if "-" in tag else "").lower().replace(" ", "-").replace("de-vanced", "devanced")
+            if not brand:
+                continue
+            pub_date = str(rel.get("published_at") or "")
+            if pub_date and (brand not in our_releases_by_brand or datetime.fromisoformat(pub_date) > datetime.fromisoformat(our_releases_by_brand[brand])):
+                our_releases_by_brand[brand] = pub_date
+            brand_built = built_versions_by_brand.setdefault(brand, {})
+            for asset in rel.get("assets", []):
+                name = str(asset.get("name") or "")
+                if m := _APK_ASSET_RE.match(name):
+                    base_name, ver = m.group(1).lower().replace("de-vanced", "devanced"), m.group(2)
+                    if base_name not in brand_built:
+                        brand_built[base_name] = ver
     except Exception as exc:
         epr(f"Failed to fetch our releases: {exc}")
-        our_releases_by_brand = {}
-    return our_releases_by_brand
+    return our_releases_by_brand, built_versions_by_brand
+
+def is_newer_version(new_ver: str, old_ver: str | None) -> bool:
+    if not old_ver:
+        return True
+    if new_ver == old_ver:
+        return False
+    k_new = ver_key(new_ver)
+    k_old = ver_key(old_ver)
+    if k_new != k_old:
+        return k_new > k_old
+    full_new = tuple(int(x) for x in re.findall(r"\d+", new_ver))
+    full_old = tuple(int(x) for x in re.findall(r"\d+", old_ver))
+    return full_new > full_old
+
+def _fetch_latest_source_version(entry: AppEntry, net: NetworkManager, scrapers: dict[str, Any]) -> str | None:
+    from src.scrapers.apkmirror import APKMirrorScraper
+    from src.scrapers.github import GitHubScraper
+
+    for src, url in entry.dl_urls.items():
+        if src not in scrapers:
+            if src == "apkmirror":
+                scrapers[src] = APKMirrorScraper(net)
+            elif src == "github":
+                scrapers[src] = GitHubScraper(net)
+            else:
+                continue
+        try:
+            metadata = scrapers[src].cached_metadata(url)
+            if metadata.versions:
+                return get_highest_ver(metadata.versions)
+        except Exception as exc:
+            epr(f"Failed to fetch source version for '{entry.table}' from '{src}': {exc}")
+    return None
 
 def _load_entries() -> list[AppEntry]:
     data = load_toml(CONFIG_PATH)
     return parse_app_entries(data, parse_config(data))
 
 def get_matrix(source: str) -> None:
-    source_lower = source.lower().replace("de-vanced", "devanced")
+    ensure_cache_file()
+    source_lower = source.lower().replace(" ", "-").replace("de-vanced", "devanced")
     filter_changelog = os.getenv("FILTER_CHANGELOG", "false").lower() == "true"
     patches_source = ""
-    has_changelog_keywords = False
     is_prerelease = False
     staged: list[AppEntry] = []
     for entry in _load_entries():
-        if not entry.enabled or entry.brand.lower().replace("de-vanced", "devanced") != source_lower:
+        if not entry.enabled or entry.brand.lower().replace(" ", "-").replace("de-vanced", "devanced") != source_lower:
             continue
         if not patches_source:
             patches_source = next(iter(entry.patches), "")
         if any(spec["version"] == "dev" for spec in entry.patches.values()):
             is_prerelease = True
-        if entry.changelog_keywords:
-            has_changelog_keywords = True
         staged.append(entry)
 
     changelog_text = ""
-    if filter_changelog and has_changelog_keywords and patches_source:
+    upstream_date = ""
+    patches_updated = True
+    built_versions_by_brand: dict[str, dict[str, str]] = {}
+    scrapers: dict[str, Any] = {}
+
+    if filter_changelog:
         with NetworkManager() as net:
             repo = os.getenv("GITHUB_REPOSITORY")
-            if repo:
-                our_releases_by_brand = _fetch_our_releases(repo, net)
-                if our_releases_by_brand.get(source_lower, ""):
-                    try:
-                        changelog_text, _ = _fetch_latest_release(patches_source, net, version="dev" if is_prerelease else "latest")
-                    except Exception as exc:
-                        epr(f"Failed to fetch changelog for '{patches_source}': {exc}")
+            if repo and patches_source:
+                our_releases_by_brand, built_versions_by_brand = _fetch_our_releases(repo, net)
+                our_date = our_releases_by_brand.get(source_lower, "")
+                version = "dev" if is_prerelease else "latest"
+                try:
+                    changelog_text, upstream_date = _fetch_latest_release(patches_source, net, version=version)
+                    if our_date and upstream_date:
+                        patches_updated = datetime.fromisoformat(upstream_date) > datetime.fromisoformat(our_date)
+                except Exception as exc:
+                    epr(f"Failed to fetch changelog for '{patches_source}': {exc}")
 
-    changelog_lower = changelog_text.lower()
-    include: list[dict[str, str]] = []
-    for entry in staged:
-        if filter_changelog and entry.changelog_keywords and changelog_text and not any(kw in changelog_lower for kw in entry.changelog_keywords):
-            continue
-        if entry.arch == "both":
-            include.extend([{"id": entry.table, "arch": "arm64-v8a"}, {"id": entry.table, "arch": "armeabi-v7a"}])
-        else:
-            include.append({"id": entry.table})
+            changelog_lower = changelog_text.lower()
+            brand_built = built_versions_by_brand.get(source_lower, {})
+            include: list[dict[str, str]] = []
+
+            for entry in staged:
+                base_name = f"{entry.app_name.lower().replace(' ', '-')}-{source_lower}"
+                built_ver = brand_built.get(base_name)
+                has_new_apk = False
+                if entry.track_apk and entry.dl_urls and entry.version != "auto":
+                    source_ver = _fetch_latest_source_version(entry, net, scrapers)
+                    if source_ver and is_newer_version(source_ver, built_ver):
+                        if not is_build_failed_previously(entry.table, source_ver, upstream_date):
+                            has_new_apk = True
+
+                if patches_updated:
+                    if entry.changelog_keywords and changelog_text and not any(kw in changelog_lower for kw in entry.changelog_keywords):
+                        if not has_new_apk:
+                            continue
+                else:
+                    if not entry.track_apk or not has_new_apk:
+                        continue
+
+                if entry.arch == "both":
+                    include.extend([{"id": entry.table, "arch": "arm64-v8a"}, {"id": entry.table, "arch": "armeabi-v7a"}])
+                else:
+                    include.append({"id": entry.table})
+    else:
+        include = []
+        for entry in staged:
+            if entry.arch == "both":
+                include.extend([{"id": entry.table, "arch": "arm64-v8a"}, {"id": entry.table, "arch": "armeabi-v7a"}])
+            else:
+                include.append({"id": entry.table})
 
     if not include:
         abort(f"No apps found for patch source '{source}'")
     print(json.dumps({"include": include, "prerelease": is_prerelease}, ensure_ascii=False))
 
 def check_builds_needed(force_all: bool = False) -> None:
+    ensure_cache_file()
     seen: dict[str, str] = {}
     dev_brands: set[str] = set()
     entries_by_brand: dict[str, list[AppEntry]] = {}
@@ -131,7 +341,7 @@ def check_builds_needed(force_all: bool = False) -> None:
     for entry in entries:
         if not entry.enabled:
             continue
-        brand = entry.brand.lower()
+        brand = entry.brand.lower().replace(" ", "-").replace("de-vanced", "devanced")
         entries_by_brand.setdefault(brand, []).append(entry)
         if brand not in seen:
             seen[brand] = next(iter(entry.patches), "")
@@ -151,9 +361,10 @@ def check_builds_needed(force_all: bool = False) -> None:
         abort("GITHUB_REPOSITORY environment variable is not set")
 
     with NetworkManager() as net:
-        our_releases_by_brand = _fetch_our_releases(repo, net)
-
+        our_releases_by_brand, built_versions_by_brand = _fetch_our_releases(repo, net)
+        scrapers: dict[str, Any] = {}
         brands_to_build: list[str] = []
+
         for brand, patches_source in seen.items():
             our_date = our_releases_by_brand.get(brand, "")
             try:
@@ -166,9 +377,8 @@ def check_builds_needed(force_all: bool = False) -> None:
                 brands_to_build.append(brand)
                 continue
 
-            if not our_date:
-                brands_to_build.append(brand)
-            elif upstream_date and datetime.fromisoformat(upstream_date) > datetime.fromisoformat(our_date):
+            patches_updated = (not our_date) or (bool(upstream_date) and datetime.fromisoformat(upstream_date) > datetime.fromisoformat(our_date))
+            if patches_updated:
                 changelog_lower = changelog_text.lower()
                 has_apps = False
                 for app in entries_by_brand.get(brand, []):
@@ -177,6 +387,26 @@ def check_builds_needed(force_all: bool = False) -> None:
                         break
                 if has_apps:
                     brands_to_build.append(brand)
+                    continue
+
+            # Check if any app with track_apk has a newer version on source
+            brand_built = built_versions_by_brand.get(brand, {})
+            apk_update_found = False
+            for app in entries_by_brand.get(brand, []):
+                if not app.track_apk or not app.dl_urls or app.version == "auto":
+                    continue
+                base_name = f"{app.app_name.lower().replace(' ', '-')}-{brand}"
+                built_ver = brand_built.get(base_name)
+                source_ver = _fetch_latest_source_version(app, net, scrapers)
+                if source_ver and is_newer_version(source_ver, built_ver):
+                    if is_build_failed_previously(app.table, source_ver, upstream_date):
+                        continue
+                    apk_update_found = True
+                    break
+
+            if apk_update_found:
+                brands_to_build.append(brand)
+
     print(json.dumps(brands_to_build))
 
 def main() -> None:
@@ -188,8 +418,12 @@ def main() -> None:
             check_builds_needed(force_all=True)
         case ["get-matrix", source]:
             get_matrix(source)
+        case ["record-failures", source, matrix_json, tag]:
+            record_failures(source, matrix_json, tag)
+        case ["clear-failures", tag]:
+            clear_failures(tag)
         case _:
-            abort("Usage: matrix.py get-matrix [source] | get-matrix-force")
+            abort("Usage: matrix.py get-matrix [source] | get-matrix-force | record-failures <source> <matrix_json> <tag> | clear-failures <tag>")
 
 if __name__ == "__main__":
     main()

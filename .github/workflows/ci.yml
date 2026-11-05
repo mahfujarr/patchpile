@@ -35,6 +35,17 @@ jobs:
       - name: Install dependencies
         run: uv sync --frozen
 
+      - name: Restore failed builds cache
+        uses: actions/cache/restore@v4
+        with:
+          path: .cache/failed_builds.json
+          key: failed-builds-${{ github.run_id }}
+          restore-keys: |
+            failed-builds-
+
+      - name: Start API Solver in background
+        run: docker run -d -p 8000:8000 ghcr.io/sarperavci/cloudflarebypassforscraping:latest
+
       - name: Get build matrix
         id: get-matrix
         env:

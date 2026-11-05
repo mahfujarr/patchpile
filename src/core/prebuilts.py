@@ -28,7 +28,7 @@ _KNOWN_PREFIXES = ("gitlab:", "github:")
 class PrebuiltsError(Exception):
     pass
 
-def _ver_key(ver: str) -> tuple[tuple[int, ...], int, tuple[int, ...]]:
+def ver_key(ver: str) -> tuple[tuple[int, ...], int, tuple[int, ...]]:
     m = re.search(r"(\d+(?:\.\d+)*)(?:-([a-zA-Z0-9.]+))?", ver)
     if not m:
         nums = tuple(int(x) for x in re.findall(r"\d+", ver))
@@ -46,6 +46,8 @@ def _ver_key(ver: str) -> tuple[tuple[int, ...], int, tuple[int, ...]]:
             suffix_nums = tuple(int(x) for x in re.findall(r"\d+", suffix_clean))
             return (base_nums, 0, suffix_nums)
     return (base_nums, 1, ())
+
+_ver_key = ver_key
 
 def _strip_src_prefix(src: str) -> str:
     for prefix in _KNOWN_PREFIXES:

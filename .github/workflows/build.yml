@@ -59,6 +59,14 @@ jobs:
       - name: Install dependencies
         run: uv sync --frozen
 
+      - name: Restore failed builds cache
+        uses: actions/cache/restore@v4
+        with:
+          path: .cache/failed_builds.json
+          key: failed-builds-${{ github.run_id }}
+          restore-keys: |
+            failed-builds-
+
       - name: Prepare version and draft release
         id: version
         env:
@@ -91,6 +99,9 @@ jobs:
             --title "$VER" \
             --notes "" \
             --repo "$GITHUB_REPOSITORY"
+
+      - name: Start API Solver in background
+        run: docker run -d -p 8000:8000 ghcr.io/sarperavci/cloudflarebypassforscraping:latest
 
       - name: Set matrix based on patch source
         id: set-matrix
@@ -204,6 +215,17 @@ jobs:
       - name: Install dependencies
         run: uv sync --frozen
 
+      - name: Restore failed builds cache
+        uses: actions/cache/restore@v4
+        with:
+          path: .cache/failed_builds.json
+          key: failed-builds-${{ github.run_id }}
+          restore-keys: |
+            failed-builds-
+
+      - name: Start API Solver in background
+        run: docker run -d -p 8000:8000 ghcr.io/sarperavci/cloudflarebypassforscraping:latest
+
       - name: Check if all builds succeeded and APKs were uploaded
         id: check
         env:
@@ -272,6 +294,31 @@ jobs:
               --title "$TAG" \
               --notes-file final.md
           fi
+
+      - name: Record failed builds
+        if: steps.check.outputs.publish != 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ needs.prepare.outputs.version }}
+          SOURCE: ${{ inputs.patch_source }}
+          MATRIX_JSON: ${{ needs.prepare.outputs.matrix }}
+        run: |
+          uv run python -m src.scripts.matrix record-failures "$SOURCE" "$MATRIX_JSON" "$TAG"
+
+      - name: Clear successful builds from failure cache
+        if: steps.check.outputs.publish == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ needs.prepare.outputs.version }}
+        run: |
+          uv run python -m src.scripts.matrix clear-failures "$TAG"
+
+      - name: Save failed builds cache
+        uses: actions/cache/save@v4
+        if: always()
+        with:
+          path: .cache/failed_builds.json
+          key: failed-builds-${{ github.run_id }}
 
       - name: Delete draft release if build failed or no APKs
         if: steps.check.outputs.publish != 'true'
