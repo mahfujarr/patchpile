@@ -136,6 +136,53 @@ def _verify_sig(dl_result: DownloadResult, pkg_name: str, patcher: PatcherCLI, t
         if not patcher.check_signature(apk_path, pkg_name):
             raise SignatureError("Bundle APK signature mismatch")
 
+_KNOWN_ARCHES = frozenset({"arm64_v8a", "armeabi_v7a", "x86", "x86_64"})
+_KNOWN_DENSITIES = frozenset({"ldpi", "mdpi", "tvdpi", "hdpi", "xhdpi", "xxhdpi", "xxxhdpi"})
+
+def _should_keep_split(fn: str, target_arch: str, kept_densities: set[str], kept_languages: set[str]) -> bool:
+    if not fn.endswith(".apk") or not fn.startswith("split_"):
+        return True
+
+    # Handle language splits: split_i18n_<lang>.apk (e.g. split_i18n_pt_BR.apk, split_i18n_en_GB.apk)
+    if fn.startswith("split_i18n_"):
+        lang_code = fn.removeprefix("split_i18n_").removesuffix(".apk").split("_")[0].lower()
+        return lang_code in kept_languages
+
+    # Handle config splits: split_config.<tag>.apk
+    if fn.startswith("split_config."):
+        tag = fn.removeprefix("split_config.").removesuffix(".apk").lower()
+        if tag in _KNOWN_ARCHES:
+            return tag == target_arch or target_arch in ("all", "both")
+        if tag in _KNOWN_DENSITIES:
+            return tag in kept_densities
+        # Config language split: split_config.<lang>.apk (e.g. split_config.ar.apk, split_config.en.apk)
+        lang_code = tag.split("_")[0].split("-")[0]
+        return lang_code in kept_languages
+
+    # Dynamic feature splits (e.g. split_heliumcore.apk, split_executorch.apk) -> KEEP
+    return True
+
+def _slim_bundle(bundle_path: Path, arch: str, dpi: str = "") -> Path:
+    target_arch = arch.replace("-", "_").lower()
+    kept_densities = {dpi.lower()} if dpi and dpi != "all" else {"xhdpi", "xxhdpi", "xxxhdpi"}
+    kept_languages = {"en"}
+    slim_path = TEMP_DIR / f"{bundle_path.stem}-slim.apkm"
+
+    stripped_count = 0
+    with zipfile.ZipFile(bundle_path, "r") as zin, zipfile.ZipFile(slim_path, "w", compression=zipfile.ZIP_DEFLATED) as zout:
+        for info in zin.infolist():
+            if not _should_keep_split(info.filename, target_arch, kept_densities, kept_languages):
+                stripped_count += 1
+                continue
+            zout.writestr(info, zin.read(info.filename))
+
+    if stripped_count > 0:
+        orig_sz = bundle_path.stat().st_size / (1024 * 1024)
+        slim_sz = slim_path.stat().st_size / (1024 * 1024)
+        pr(f"Slimmed bundle '{bundle_path.name}': removed {stripped_count} splits ({orig_sz:.1f} MB -> {slim_sz:.1f} MB)")
+
+    return slim_path
+
 def _apply_patch(entry: AppEntry, arch: str, version: str, force: bool, patcher: PatcherCLI, list_patches: str, dl_result: DownloadResult) -> Path:
     arch_f = arch.replace(" ", "")
     version_f = version.replace(" ", "").lstrip("v")
@@ -145,8 +192,19 @@ def _apply_patch(entry: AppEntry, arch: str, version: str, force: bool, patcher:
     apk_name = f"{base_name}-v{version_f}-{arch_f}.apk"
     patched_apk = TEMP_DIR / apk_name
 
+    input_path = dl_result.path
+    slim_path: Path | None = None
+    if dl_result.is_bundle and entry.slim_bundle:
+        slim_path = _slim_bundle(dl_result.path, arch=arch, dpi=entry.dpi)
+        input_path = slim_path
+
     pr(f"Building '{entry.table}'")
-    patcher.patch(dl_result.path, patched_apk, final_args)
+    try:
+        patcher.patch(input_path, patched_apk, final_args)
+    finally:
+        if slim_path and slim_path.is_file():
+            slim_path.unlink(missing_ok=True)
+
     apk_output = BUILD_DIR / apk_name
     shutil.move(patched_apk, apk_output)
     return apk_output
