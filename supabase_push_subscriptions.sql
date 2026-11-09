@@ -1,5 +1,4 @@
 -- Supabase Schema for Patchpile Web Push Notifications
--- Run this in your Supabase SQL Editor: https://supabase.com/dashboard/project/anikploodichlpgfymiq/sql
 
 CREATE TABLE IF NOT EXISTS public.push_subscriptions (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,

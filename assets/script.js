@@ -1093,6 +1093,13 @@ function showToast(message, duration = 4500) {
       }
     }
 
+    const igApp = document.querySelector(".app.ig-app");
+    if (igApp) {
+      igApp
+        .querySelector('.brand-btn[data-brand="hush"]')
+        ?.click();
+    }
+
     if (rateLimitTriggered) {
       updateRateLimitWarning();
     } else {
