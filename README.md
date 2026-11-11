@@ -38,6 +38,9 @@ Current patch-source mapping:
 | Instagram                 | [crimera/piko](https://github.com/crimera/piko)                               |
 | Google Photos             | [rushiranpise/morphe-patches](https://github.com/rushiranpise/morphe-patches) |
 | Google Photos (`GPhotos`) | [RookieEnough/De-Vanced](https://github.com/RookieEnough/De-Vanced)           |
+| Facebook                  | [SysAdminDoc/Hushfacebook](https://github.com/SysAdminDoc/Hushfacebook)       |
+| Messenger                 | [SysAdminDoc/HushMessenger](https://github.com/SysAdminDoc/HushMessenger)     |
+| Instagram (`HushGram`)    | [SysAdminDoc/HushGram](https://github.com/SysAdminDoc/HushGram)               |
 
 The configuration also applies personal branding, icons, package-name options, and other build-specific settings.
 
@@ -56,6 +59,7 @@ If you want to build your own patched applications, please use the upstream proj
 - [crimera](https://github.com/crimera) — Piko
 - [RookieEnough](https://github.com/RookieEnough) — De-Vanced
 - [rushiranpise](https://github.com/rushiranpise) — Google Photos Morphe patches
+- [SysAdminDoc](https://github.com/SysAdminDoc) — Hushfacebook, HushMessenger, and HushGram
 - [MorpheApp/morphe-patches](https://github.com/MorpheApp/morphe-patches) — Morphe patch framework and patches
 - [MorpheApp/MicroG-RE](https://github.com/MorpheApp/MicroG-RE) — GmsCore fork used by the Morphe ecosystem where applicable
 - All other upstream developers and contributors whose code is incorporated into the projects above
