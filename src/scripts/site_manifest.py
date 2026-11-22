@@ -90,8 +90,8 @@ def main() -> None:
         f"https://api.github.com/repos/{args.repo}/actions/workflows/ci.yml/runs?per_page=1",
         token,
     )
-    ytdlnis: Any = fetch_json(
-        "https://api.github.com/repos/deniscerri/ytdlnis/releases/latest",
+    ytindir: Any = fetch_json(
+        "https://api.github.com/repos/RAMiK4/ytindir/releases/latest",
         token,
     )
 
@@ -104,7 +104,7 @@ def main() -> None:
         "generated_at": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
         "repos": {args.repo: enrich_releases(releases, token)},
         "actions": {"last_sync": last_sync},
-        "ytdlnis": ytdlnis,
+        "ytindir": ytindir,
     }
     args.output.write_text(json.dumps(manifest, ensure_ascii=False), encoding="utf-8")
 

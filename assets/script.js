@@ -1096,19 +1096,33 @@ function showToast(message, duration = 4500) {
   // Initial render of all release cards
   updateAllReleaseCards(false);
 
-  // --- ytdlnis Pipeline Setup ---
-  async function updateYtdlnis(manifest) {
-    const row = document.getElementById("ytdlnis-row");
+  // --- Downloader (YTindir) Pipeline Setup ---
+  async function updateDownloader(manifest) {
+    const row =
+      document.getElementById("ytindir-row") ||
+      document.getElementById("ytdlnis-row");
     if (!row) return;
-    const versionEl = document.getElementById("ytdlnis-version");
-    const linkEl = document.getElementById("ytdlnis-link");
+    const versionEl =
+      document.getElementById("ytindir-version") ||
+      document.getElementById("ytdlnis-version");
+    const linkEl =
+      document.getElementById("ytindir-link") ||
+      document.getElementById("ytdlnis-link");
 
     try {
-      const data = manifest ? manifest.ytdlnis : (await getLocalManifest())?.ytdlnis;
+      const m = manifest || (await getLocalManifest());
+      const data = m?.ytindir || m?.ytdlnis;
       if (data) {
-        const asset = (data.assets || []).find((a) =>
-          a.name.toLowerCase().endsWith(".apk"),
-        );
+        const asset =
+          (data.assets || []).find(
+            (a) =>
+              a.name.toLowerCase().endsWith(".apk") &&
+              (a.name.toLowerCase().includes("arm64") ||
+                a.name.toLowerCase().includes("universal")),
+          ) ||
+          (data.assets || []).find((a) =>
+            a.name.toLowerCase().endsWith(".apk"),
+          );
         if (asset && linkEl) linkEl.href = asset.browser_download_url;
         if (data.tag_name && versionEl) {
           versionEl.textContent = ` (${data.tag_name.replace(/^v/, "v")})`;
@@ -1117,7 +1131,7 @@ function showToast(message, duration = 4500) {
     } catch (e) {}
   }
 
-  updateYtdlnis();
+  updateDownloader();
 
   // --- Refresh Button Handler ---
   const refreshBtn = document.getElementById("refresh-releases");
@@ -1135,8 +1149,8 @@ function showToast(message, duration = 4500) {
         // Instantly refresh all release cards & download links in DOM
         await updateAllReleaseCards(true);
 
-        // Instantly refresh YTDLnis link
-        await updateYtdlnis(freshManifest);
+        // Instantly refresh downloader link
+        await updateDownloader(freshManifest);
 
         // Instantly refresh What's New section
         const freshReleases = freshManifest?.repos?.["mahfujarr/patchpile"];
