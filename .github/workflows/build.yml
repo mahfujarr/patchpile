@@ -11,10 +11,7 @@ on:
         options:
           - morphe
           - morphe-dev
-          - piko
-          - piko-dev
-          - rushi
-          - devanced
+          - gphotos
           - hush-facebook
           - hush-messenger
           - hush-instagram

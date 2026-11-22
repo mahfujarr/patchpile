@@ -61,25 +61,6 @@ function showToast(message, duration = 4500) {
       const app = button.closest(".app");
       if (!app) return;
 
-      // Handle brand toggle (e.g. Instagram piko vs hush)
-      if (button.dataset.brand) {
-        const brand = button.dataset.brand;
-        app.dataset.brandState = brand;
-        const experimentalMenu = app?.querySelector(".exp-menu");
-        if (experimentalMenu) {
-          experimentalMenu.open = true;
-          experimentalMenu.setAttribute("open", "");
-        }
-        app.querySelectorAll(".brand-btn").forEach((btn) => {
-          btn.setAttribute("aria-pressed", String(btn.dataset.brand === brand));
-        });
-        const changelogOpen = [...app.querySelectorAll(".changelog-menu")].some(
-          (menu) => menu.open,
-        );
-        setAppChangelogOpen(app, changelogOpen);
-        return;
-      }
-
       const experimentalMenu = app?.querySelector(".exp-menu");
       const selectedBuild = button.dataset.build;
       if (!selectedBuild) return;
@@ -94,13 +75,13 @@ function showToast(message, duration = 4500) {
           experimentalMenu.setAttribute("open", "");
         }
       } else {
-        if (experimentalMenu && !app.classList.contains("ig-app")) {
+        if (experimentalMenu) {
           experimentalMenu.open = false;
           experimentalMenu.removeAttribute("open");
         }
       }
       setAppChangelogOpen(app, changelogOpen);
-      app.querySelectorAll(".build-variant-btn:not(.brand-btn)").forEach((variantButton) => {
+      app.querySelectorAll(".build-variant-btn").forEach((variantButton) => {
         variantButton.setAttribute(
           "aria-pressed",
           String(variantButton.dataset.build === selectedBuild),
@@ -451,7 +432,7 @@ function showToast(message, duration = 4500) {
         appType = "ytm";
       } else if (lower.includes("youtube") || lower.includes("yt")) {
         appType = "yt";
-      } else if (lower.includes("instagram") || lower.includes("piko")) {
+      } else if (lower.includes("instagram") || lower.includes("hushgram")) {
         appType = "ig";
       } else if (lower.includes("photo") || lower.includes("gphotos")) {
         appType = "gph";
@@ -1003,13 +984,9 @@ function showToast(message, duration = 4500) {
 
         if (!data || !asset) {
           const appParent = card.closest(".app");
-          const targetDlBtn =
-            card.dataset.patchSource === "hush-instagram"
-              ? appParent?.querySelector(".dl-hush") || dlBtn
-              : dlBtn;
-          if (targetDlBtn) {
-            targetDlBtn.textContent = "⚠ Build not found";
-            targetDlBtn.classList.add("error");
+          if (dlBtn) {
+            dlBtn.textContent = "⚠ Build not found";
+            dlBtn.classList.add("error");
           }
           sizeEl?.remove();
           builtEl?.remove();
@@ -1077,13 +1054,6 @@ function showToast(message, duration = 4500) {
 
         card.dataset.releaseTime = data.published_at || data.created_at || "";
       });
-    }
-
-    const igApp = document.querySelector(".app.ig-app");
-    if (igApp) {
-      igApp
-        .querySelector('.brand-btn[data-brand="hush"]')
-        ?.click();
     }
 
     if (rateLimitTriggered) {

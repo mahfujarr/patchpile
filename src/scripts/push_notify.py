@@ -119,10 +119,9 @@ def _build_payload(target: str, final_md: Path | None = None) -> dict[str, Any]:
     if not apps:
         norm = target.lower().strip()
         brand_map = {
-            "piko": "Instagram",
-            "piko-dev": "Instagram Experimental",
             "morphe": "YouTube Stable & YT Music Stable",
             "morphe-dev": "YT Music Experimental & YouTube Experimental",
+            "gphotos": "Google Photos",
             "devanced": "Google Photos",
             "de-vanced": "Google Photos",
             "rushi": "Google Photos",

@@ -35,7 +35,6 @@ Current patch-source mapping:
 | ------------------------- | ----------------------------------------------------------------------------- |
 | YouTube                   | [MorpheApp/morphe-patches](https://github.com/MorpheApp/morphe-patches)       |
 | YouTube Music             | [MorpheApp/morphe-patches](https://github.com/MorpheApp/morphe-patches)       |
-| Instagram                 | [crimera/piko](https://github.com/crimera/piko)                               |
 | Google Photos (`GPhotos`) | [Akash-Sriram/morphe-google-photos](https://github.com/Akash-Sriram/morphe-google-photos) |
 | Facebook                  | [SysAdminDoc/Hushfacebook](https://github.com/SysAdminDoc/Hushfacebook)       |
 | Messenger                 | [SysAdminDoc/HushMessenger](https://github.com/SysAdminDoc/HushMessenger)     |
@@ -55,9 +54,7 @@ If you want to build your own patched applications, please use the upstream proj
 - [krvstek](https://github.com/krvstek) — `uni-apks`
 - [j-hc](https://github.com/j-hc) — original build-system foundation
 - [MorpheApp](https://github.com/MorpheApp) — Morphe and Morphe Patches
-- [crimera](https://github.com/crimera) — Piko
-- [RookieEnough](https://github.com/RookieEnough) — De-Vanced
-- [rushiranpise](https://github.com/rushiranpise) — Google Photos Morphe patches
+- [Akash-Sriram](https://github.com/Akash-Sriram) — Google Photos Morphe patches
 - [SysAdminDoc](https://github.com/SysAdminDoc) — Hushfacebook, HushMessenger, and HushGram
 - [MorpheApp/morphe-patches](https://github.com/MorpheApp/morphe-patches) — Morphe patch framework and patches
 - [MorpheApp/MicroG-RE](https://github.com/MorpheApp/MicroG-RE) — GmsCore fork used by the Morphe ecosystem where applicable
