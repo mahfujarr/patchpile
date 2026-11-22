@@ -36,8 +36,7 @@ Current patch-source mapping:
 | YouTube                   | [MorpheApp/morphe-patches](https://github.com/MorpheApp/morphe-patches)       |
 | YouTube Music             | [MorpheApp/morphe-patches](https://github.com/MorpheApp/morphe-patches)       |
 | Instagram                 | [crimera/piko](https://github.com/crimera/piko)                               |
-| Google Photos             | [rushiranpise/morphe-patches](https://github.com/rushiranpise/morphe-patches) |
-| Google Photos (`GPhotos`) | [RookieEnough/De-Vanced](https://github.com/RookieEnough/De-Vanced)           |
+| Google Photos (`GPhotos`) | [Akash-Sriram/morphe-google-photos](https://github.com/Akash-Sriram/morphe-google-photos) |
 | Facebook                  | [SysAdminDoc/Hushfacebook](https://github.com/SysAdminDoc/Hushfacebook)       |
 | Messenger                 | [SysAdminDoc/HushMessenger](https://github.com/SysAdminDoc/HushMessenger)     |
 | Instagram (`HushGram`)    | [SysAdminDoc/HushGram](https://github.com/SysAdminDoc/HushGram)               |

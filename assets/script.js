@@ -276,9 +276,13 @@ function showToast(message, duration = 4500) {
   }
 
   function pickLatestMatchingRelease(releases, patchSource) {
+    const src = String(patchSource || "").toLowerCase();
     return (releases || [])
       .filter(
-        (r) => !r.draft && r.tag_name && r.tag_name.endsWith(`-${patchSource}`),
+        (r) =>
+          !r.draft &&
+          r.tag_name &&
+          r.tag_name.toLowerCase().endsWith(`-${src}`),
       )
       .sort((a, b) => {
         const aTime = Date.parse(a.published_at || a.created_at || 0);
@@ -1073,24 +1077,6 @@ function showToast(message, duration = 4500) {
 
         card.dataset.releaseTime = data.published_at || data.created_at || "";
       });
-    }
-
-    const gphotosApp = document.querySelector(
-      '.app[data-asset-match="google-photos-rushi"]',
-    );
-    if (gphotosApp) {
-      const devancedItem = gphotosApp.querySelector(
-        '.exp-item[data-asset-match="gphotos-devanced"]',
-      );
-      if (
-        devancedItem &&
-        Date.parse(devancedItem.dataset.releaseTime || "") >
-          Date.parse(gphotosApp.dataset.releaseTime || "")
-      ) {
-        gphotosApp
-          .querySelector('.build-variant-btn[data-build="experimental"]')
-          ?.click();
-      }
     }
 
     const igApp = document.querySelector(".app.ig-app");

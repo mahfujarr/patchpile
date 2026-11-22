@@ -30,8 +30,9 @@ SITE_URL = "https://mahfujarr.github.io/patchpile/"
 def _clean_app_name(raw: str) -> str:
     cleaned = raw.strip()
     # Normalize abbreviations and hyphenation while preserving tags like Experimental / Stable
-    cleaned = cleaned.replace("YT-Music", "YT Music").replace(
-        "Google-Photos", "Google Photos"
+    cleaned = (
+        cleaned.replace("YT-Music", "YT Music")
+        .replace("Google-Photos", "Google Photos")
     )
     if cleaned.startswith("GPhotos"):
         cleaned = cleaned.replace("GPhotos", "Google Photos", 1)
