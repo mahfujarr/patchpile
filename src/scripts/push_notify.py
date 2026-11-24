@@ -10,11 +10,11 @@ import json
 import os
 import re
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 from urllib.parse import quote
 
-import pywebpush
 from curl_cffi import requests as curl_requests
 
 from src.core.logger import abort, epr, pr
@@ -24,15 +24,16 @@ DEFAULT_SUPABASE_KEY = "sb_publishable_r6Q5fgqVFu9TkH21jtmGjw_9MRXOYz8"
 DEFAULT_VAPID_PUBLIC_KEY = "BKHQ6jfcI8aUOUHR10SH2DmKDTEz9kX9thkdzR-8ZEY462f8LMutAfe9XLcxMnFye4rCS1tZ0i3Gnx1oNy-tjmE"
 DEFAULT_VAPID_PRIVATE_KEY = "qUNcnHcAYe7H80Kdr-yh68e3dIFABfv-PUV0MfIINMQ"
 DEFAULT_CLAIMS_EMAIL = "mailto:mahfu63@gmail.com"
+DEFAULT_STALE_DAYS = 30
+DEFAULT_PUSH_TTL = 43200  # 12 hours
 SITE_URL = "https://mahfujarr.github.io/patchpile/"
 
 
 def _clean_app_name(raw: str) -> str:
     cleaned = raw.strip()
     # Normalize abbreviations and hyphenation while preserving tags like Experimental / Stable
-    cleaned = (
-        cleaned.replace("YT-Music", "YT Music")
-        .replace("Google-Photos", "Google Photos")
+    cleaned = cleaned.replace("YT-Music", "YT Music").replace(
+        "Google-Photos", "Google Photos"
     )
     if cleaned.startswith("GPhotos"):
         cleaned = cleaned.replace("GPhotos", "Google Photos", 1)
@@ -122,13 +123,6 @@ def _build_payload(target: str, final_md: Path | None = None) -> dict[str, Any]:
             "morphe": "YouTube Stable & YT Music Stable",
             "morphe-dev": "YT Music Experimental & YouTube Experimental",
             "gphotos": "Google Photos",
-            "devanced": "Google Photos",
-            "de-vanced": "Google Photos",
-            "rushi": "Google Photos",
-            "hoo-dles": "YouTube",
-            "hooman": "YouTube",
-            "paresh": "YouTube",
-            "tiktok": "TikTok",
         }
         known_app = brand_map.get(norm)
         if known_app:
@@ -143,9 +137,7 @@ def _build_payload(target: str, final_md: Path | None = None) -> dict[str, Any]:
     title = f"New {primary_title_str} Update"
     body = "Click to download."
     tag = (
-        f"patchpile-{apps[0].lower().replace(' ', '-')}"
-        if apps
-        else "patchpile-update"
+        f"patchpile-{apps[0].lower().replace(' ', '-')}" if apps else "patchpile-update"
     )
 
     return {
@@ -161,8 +153,10 @@ def _build_payload(target: str, final_md: Path | None = None) -> dict[str, Any]:
     }
 
 
-def fetch_subscriptions(supabase_url: str, supabase_key: str) -> list[dict[str, Any]] | None:
-    url = f"{supabase_url.rstrip('/')}/rest/v1/push_subscriptions?select=id,endpoint,p256dh,auth"
+def fetch_subscriptions(
+    supabase_url: str, supabase_key: str
+) -> list[dict[str, Any]] | None:
+    url = f"{supabase_url.rstrip('/')}/rest/v1/push_subscriptions?select=id,endpoint,p256dh,auth,user_agent,updated_at"
     headers = {
         "apikey": supabase_key,
         "Authorization": f"Bearer {supabase_key}",
@@ -182,17 +176,150 @@ def fetch_subscriptions(supabase_url: str, supabase_key: str) -> list[dict[str, 
             return None
 
 
-def delete_subscription(supabase_url: str, supabase_key: str, endpoint: str) -> None:
+def delete_subscription(supabase_url: str, supabase_key: str, endpoint: str) -> bool:
     url = f"{supabase_url.rstrip('/')}/rest/v1/push_subscriptions?endpoint=eq.{quote(endpoint, safe='')}"
     headers = {
         "apikey": supabase_key,
         "Authorization": f"Bearer {supabase_key}",
+        "Prefer": "return=representation",
     }
-    with curl_requests.Session() as session:
-        session.delete(url, headers=headers, timeout=(5, 10))
+    try:
+        with curl_requests.Session() as session:
+            resp = session.delete(url, headers=headers, timeout=(5, 10))
+            if resp.status_code in (200, 204):
+                try:
+                    deleted = resp.json()
+                    if isinstance(deleted, list) and len(deleted) == 0:
+                        epr(
+                            "Warning: Supabase returned 0 deleted rows (check if SUPABASE_SERVICE_ROLE_KEY is set in GitHub Secrets or if RLS policy allows DELETE)."
+                        )
+                        return False
+                except Exception:
+                    pass
+                return True
+            else:
+                epr(f"Supabase delete failed ({resp.status_code}): {resp.text}")
+                return False
+    except Exception as e:
+        epr(f"Error deleting subscription from Supabase: {e}")
+        return False
+
+
+def _is_stale(sub: dict[str, Any], max_days: int = DEFAULT_STALE_DAYS) -> bool:
+    updated_at_str = sub.get("updated_at")
+    if not updated_at_str:
+        return False
+    try:
+        clean_iso = updated_at_str.replace("Z", "+00:00")
+        dt = datetime.fromisoformat(clean_iso)
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        now = datetime.now(timezone.utc)
+        age_days = (now - dt).total_seconds() / 86400
+        return age_days > max_days
+    except Exception:
+        return False
+
+
+def list_subscribers() -> None:
+    supabase_url = os.getenv("SUPABASE_URL", DEFAULT_SUPABASE_URL)
+    supabase_key = os.getenv("SUPABASE_KEY", DEFAULT_SUPABASE_KEY)
+    subs = fetch_subscriptions(supabase_url, supabase_key)
+    if subs is None:
+        epr("Failed to load subscribers from Supabase.")
+        return
+    if not subs:
+        pr("No subscriptions found in Supabase.")
+        return
+
+    pr(f"\n--- Supabase Push Subscriptions ({len(subs)} total) ---")
+    now = datetime.now(timezone.utc)
+    for i, s in enumerate(subs, 1):
+        sub_id = s.get("id", "N/A")
+        ua = s.get("user_agent") or "Unknown"
+        updated_str = s.get("updated_at") or "Unknown"
+        age_str = ""
+        is_stale = False
+        if updated_str != "Unknown":
+            try:
+                dt = datetime.fromisoformat(updated_str.replace("Z", "+00:00"))
+                if dt.tzinfo is None:
+                    dt = dt.replace(tzinfo=timezone.utc)
+                days = int((now - dt).total_seconds() // 86400)
+                age_str = f" ({days}d ago)"
+                is_stale = days > DEFAULT_STALE_DAYS
+            except Exception:
+                pass
+        stale_tag = " [STALE]" if is_stale else " [ACTIVE]"
+        ep = s.get("endpoint", "")
+        pr(f"[{i}]{stale_tag} ID: {sub_id} | Updated: {updated_str}{age_str}")
+        pr(f"    UA: {ua}")
+        pr(f"    Endpoint: {ep[:60]}...")
+    pr("----------------------------------------------------\n")
+
+
+def prune_subscribers(max_days: int = DEFAULT_STALE_DAYS, force: bool = False) -> None:
+    supabase_url = os.getenv("SUPABASE_URL", DEFAULT_SUPABASE_URL)
+    supabase_key = os.getenv("SUPABASE_KEY", DEFAULT_SUPABASE_KEY)
+
+    if supabase_key == DEFAULT_SUPABASE_KEY:
+        pr("ℹ Note: Using default publishable key. To bypass RLS, provide SUPABASE_KEY=<secret_key>.")
+
+    subs = fetch_subscriptions(supabase_url, supabase_key)
+    if subs is None:
+        epr("Failed to load subscribers from Supabase.")
+        return
+    if not subs:
+        pr("No subscriptions found in Supabase.")
+        return
+
+    to_prune = [s for s in subs if _is_stale(s, max_days=max_days)]
+    if not to_prune:
+        pr(
+            f"No stale subscriptions found older than {max_days} days (out of {len(subs)} total)."
+        )
+        return
+
+    pr(f"\nFound {len(to_prune)} stale subscription(s) older than {max_days} days:")
+    for s in to_prune:
+        ua = s.get("user_agent", "unknown")[:60]
+        pr(f"  • {ua} (Last active: {s.get('updated_at', 'unknown')})")
+
+    if sys.stdin.isatty() and not force:
+        try:
+            confirm = (
+                input(f"\nDelete these {len(to_prune)} subscriptions from Supabase? [y/N]: ")
+                .strip()
+                .lower()
+            )
+            if confirm not in ("y", "yes"):
+                pr("Aborted. No subscriptions were deleted.")
+                return
+        except (KeyboardInterrupt, EOFError):
+            pr("\nAborted.")
+            return
+
+    pr(f"\nDeleting {len(to_prune)} subscription(s)...")
+    pruned = 0
+    for s in to_prune:
+        ep = s.get("endpoint", "")
+        ua = s.get("user_agent", "unknown")[:40]
+        if ep:
+            pr(f"Deleting [{ua}]: {ep[:50]}...")
+            if delete_subscription(supabase_url, supabase_key, ep):
+                pruned += 1
+
+    pr(f"Prune finished: {pruned}/{len(to_prune)} successfully deleted.")
 
 
 def notify(brand: str, final_md_path: str = "final.md") -> None:
+    try:
+        import pywebpush
+    except ImportError:
+        abort(
+            "pywebpush is required to send push notifications. Run with: uv run --with pywebpush ..."
+        )
+
     vapid_private_key = os.getenv("VAPID_PRIVATE_KEY", DEFAULT_VAPID_PRIVATE_KEY)
     if not vapid_private_key:
         epr("VAPID_PRIVATE_KEY not set in secrets, skipping Web Push notification")
@@ -219,12 +346,36 @@ def notify(brand: str, final_md_path: str = "final.md") -> None:
         )
         return
 
-    pr(f"Found {len(subscriptions)} subscriber(s). Broadcasting Web Push...")
+    # Automatically identify and prune stale subscriptions (e.g. uninstalled browsers > 30 days old)
+    active_subs: list[dict[str, Any]] = []
+    stale_subs: list[dict[str, Any]] = []
+    for sub in subscriptions:
+        if _is_stale(sub, max_days=DEFAULT_STALE_DAYS):
+            stale_subs.append(sub)
+        else:
+            active_subs.append(sub)
+
+    if stale_subs:
+        pr(
+            f"Found {len(stale_subs)} stale subscription(s) inactive for >{DEFAULT_STALE_DAYS} days. Auto-pruning..."
+        )
+        for sub in stale_subs:
+            ep = sub.get("endpoint", "")
+            ua = sub.get("user_agent", "unknown")[:35]
+            if ep:
+                pr(f"Auto-pruning stale device [{ua}]: {ep[:45]}...")
+                delete_subscription(supabase_url, supabase_key, ep)
+
+    if not active_subs:
+        pr("No active subscriptions remaining to notify.")
+        return
+
+    pr(f"Found {len(active_subs)} active subscriber(s). Broadcasting Web Push...")
     success = 0
     expired = 0
     failed = 0
 
-    for sub in subscriptions:
+    for sub in active_subs:
         endpoint = sub.get("endpoint")
         p256dh = sub.get("p256dh")
         auth = sub.get("auth")
@@ -249,7 +400,7 @@ def notify(brand: str, final_md_path: str = "final.md") -> None:
                 vapid_private_key=vapid_private_key,
                 vapid_claims=claims,
                 timeout=8,
-                ttl=86400,
+                ttl=DEFAULT_PUSH_TTL,
             )
             status_code = getattr(resp, "status_code", 201)
             if status_code in (200, 201, 204):
@@ -299,8 +450,26 @@ def main() -> None:
             notify(brand)
         case ["notify", brand, final_md]:
             notify(brand, final_md)
+        case ["list"]:
+            list_subscribers()
+        case ["prune"]:
+            prune_subscribers()
+        case ["prune", "-y" | "--yes" | "--force"]:
+            prune_subscribers(force=True)
+        case ["prune", days]:
+            try:
+                prune_subscribers(int(days))
+            except ValueError:
+                abort("Error: days must be an integer.")
+        case ["prune", days, "-y" | "--yes" | "--force"]:
+            try:
+                prune_subscribers(int(days), force=True)
+            except ValueError:
+                abort("Error: days must be an integer.")
         case _:
-            abort("Usage: push_notify.py notify <brand> [final_md_path]")
+            abort(
+                "Usage: push_notify.py notify <brand> [final_md_path] | list | prune [days] [-y]"
+            )
 
 
 if __name__ == "__main__":
