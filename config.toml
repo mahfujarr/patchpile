@@ -71,7 +71,7 @@ arch = "arm64-v8a"
 #version = "latest"
 #track-apk = true
 changelog-keywords = ["photos", "gphotos", "Google Photos"]
-patcher-args = '-e "Custom branding" -Oapp-name="\"Photos XL\""'
+patcher-args = '-e "Custom branding" -Oapp-name="\"Photos\""'
 
 [GPhotos.patches]
 "github:Akash-Sriram/morphe-google-photos" = { version = "dev" }
