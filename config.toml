@@ -68,7 +68,7 @@ app-name = "Google Photos"
 brand = "gphotos"
 apkmirror-dlurl = "https://www.apkmirror.com/apk/google-inc/photos/"
 arch = "arm64-v8a"
-#version = "latest"
+version = "exp"
 #track-apk = true
 changelog-keywords = ["photos", "gphotos", "Google Photos"]
 patcher-args = '-e "Custom branding" -Oapp-name="\"Photos\""'
